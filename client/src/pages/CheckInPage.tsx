@@ -70,6 +70,14 @@ import {
 const PAGE_SIZE = 20;
 const GROUP_OPTIONS: GroupName[] = ['A', 'B', 'C', 'D'];
 const REFRESH_INTERVAL = 5000;
+
+// 分组按钮颜色映射，方便快速区分不同组
+const GROUP_COLORS: Record<GroupName, { bg: string; hover: string; border: string; text: string }> = {
+  A: { bg: 'bg-cyan-600', hover: 'hover:bg-cyan-700', border: 'border-cyan-500', text: 'text-cyan-600' },
+  B: { bg: 'bg-emerald-600', hover: 'hover:bg-emerald-700', border: 'border-emerald-500', text: 'text-emerald-600' },
+  C: { bg: 'bg-orange-600', hover: 'hover:bg-orange-700', border: 'border-orange-500', text: 'text-orange-600' },
+  D: { bg: 'bg-violet-600', hover: 'hover:bg-violet-700', border: 'border-violet-500', text: 'text-violet-600' },
+};
 const SESSION_KEY = 'admin_session';
 const ADMIN_NAME = 'guido';
 const FLOATING_STAFF: string[] = [
@@ -252,8 +260,9 @@ const CheckInPage = () => {
 
 
   // --- Load list ---
-  const loadList = useCallback(async () => {
-    setLoading(true);
+  const loadList = useCallback(async (isSilent = false) => {
+    // 静默刷新（定时轮询）时不显示loading，避免页面闪烁和滚动位置丢失
+    if (!isSilent) setLoading(true);
     try {
       const params: {
         keyword?: string;
@@ -332,7 +341,8 @@ const CheckInPage = () => {
 
      useEffect(() => {
       const intervalId = setInterval(() => {
-        void loadList();
+        // 定时静默刷新，只更新数据，不显示loading，保持页面状态和滚动位置
+        void loadList(true);
         void loadGroupCounts();
       }, REFRESH_INTERVAL);
       return () => clearInterval(intervalId);
@@ -833,23 +843,23 @@ const CheckInPage = () => {
            {GROUP_OPTIONS.map((g: GroupName) => {
              const count = getGroupCount(g);
              const recommended = isRecommendedGroup(g);
+             const color = GROUP_COLORS[g];
              return (
                <TooltipProvider key={g}>
                  <Tooltip>
                    <TooltipTrigger asChild>
                      <Button
                        size="sm"
-                       variant={recommended ? 'default' : 'outline'}
                        onClick={() => handleAssignGroup(candidate.id, g)}
                        aria-label={`分配 ${candidate.name} 到 ${g} 组，当前${count}人待面试`}
-                       className={`min-w-14 px-2 ${recommended ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                       className={`min-w-14 px-2 text-white font-semibold ${color.bg} ${color.hover} ${recommended ? 'ring-2 ring-offset-1 ring-yellow-400' : ''}`}
                        disabled={!canOperateFlow}
                      >
                        {g}({count})
                      </Button>
                    </TooltipTrigger>
                    <TooltipContent>
-                     <p>{g}组当前 {count} 人待面试</p>
+                     <p>{g}组当前 {count} 人待面试{recommended ? ' · 推荐' : ''}</p>
                    </TooltipContent>
                  </Tooltip>
                </TooltipProvider>
@@ -1893,21 +1903,22 @@ const CheckInPage = () => {
                    const count = getGroupCount(g);
                    const recommended = isRecommendedGroup(g);
                    const isCurrent = reassignCandidate?.groupName === g;
+                   const isSelected = reassignGroup === g;
+                   const color = GROUP_COLORS[g];
                    return (
                      <Button
                        key={g}
                        type="button"
-                       variant={recommended ? 'default' : 'outline'}
-                       className={`h-12 flex flex-col gap-0.5 ${
-                         recommended ? 'bg-emerald-600 hover:bg-emerald-700' : ''
-                       } ${isCurrent ? 'ring-2 ring-indigo-400 ring-offset-1' : ''}`}
+                       className={`h-12 flex flex-col gap-0.5 text-white font-semibold ${color.bg} ${color.hover} ${
+                         isSelected ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
+                       } ${isCurrent ? 'opacity-90' : ''}`}
                        onClick={() => setReassignGroup(g)}
                      >
                        <span className="text-base font-semibold leading-tight">
                          {g}组
                          {isCurrent && <span className="text-xs ml-1 opacity-80">(当前)</span>}
                        </span>
-                       <span className="text-xs opacity-80 leading-tight">
+                       <span className="text-xs opacity-90 leading-tight">
                          {count}人待面{recommended ? ' · 推荐' : ''}
                        </span>
                      </Button>
