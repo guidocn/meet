@@ -319,7 +319,7 @@ const DisplayPage = () => {
   const [tipIndex, setTipIndex] = useState<number>(0);
   const [tipFading, setTipFading] = useState<boolean>(false);
 
-  const signInUrl = useMemo(() => resolveAppUrl('/'), []);
+  const signInUrl = useMemo(() => 'https://meet.guido.cn', []);
 
   const particlesInit = useCallback(async (engine: Engine) => {
     if (particlesInitialized) return;

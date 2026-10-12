@@ -69,7 +69,7 @@ import {
 
 const PAGE_SIZE = 20;
 const GROUP_OPTIONS: GroupName[] = ['A', 'B', 'C', 'D'];
-const REFRESH_INTERVAL = 15000;
+const REFRESH_INTERVAL = 5000;
 const SESSION_KEY = 'admin_session';
 const ADMIN_NAME = 'guido';
 const FLOATING_STAFF: string[] = [
