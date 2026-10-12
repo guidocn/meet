@@ -22,10 +22,12 @@
 ├── client/                 # 前端 React 应用
 │   ├── index.html
 │   ├── public/
-│   │   └── _redirects      # SPA fallback
+│   │   └── _redirects      # 重定向规则（留空，SPA fallback 由 Functions 实现）
 │   └── src/
 ├── functions/              # Cloudflare Pages Functions
+│   ├── [[path]].js          # SPA fallback（兜底返回 index.html）
 │   ├── api/
+│   │   ├── health.js        # /api/health 健康检查
 │   │   └── candidates/
 │   │       └── [[path]].js # /api/candidates/* 路由
 │   └── lib/
@@ -99,6 +101,18 @@ npx wrangler pages deploy client-dist
 6. 点击 Save and Deploy
 
 部署完成后，Cloudflare 会自动触发构建并部署，后续每次 push 到主分支都会自动重新部署。
+
+### 部署后验证
+
+部署成功后，可以通过以下接口验证各组件是否正常工作：
+
+1. **健康检查**：访问 `https://你的域名/api/health`，应返回 `{"status":"ok","db":true,...}`
+   - `db: true` 表示 D1 数据库绑定正常
+   - `db: false` 表示数据库未绑定或表不存在
+
+2. **SPA 路由**：直接访问 `https://你的域名/console`，应正常加载页面（不 404）
+
+3. **API 接口**：浏览器控制台 Network 面板中 `/api/candidates/*` 请求应返回 JSON，不出现 404/405
 
 ## 本地开发
 
@@ -233,7 +247,7 @@ A: 检查 `wrangler.toml` 中的 `database_id` 是否正确，以及 `binding = 
 A: 确保执行过 `wrangler d1 create interview-system-db --local` 和 `--local --file=./schema.sql` 初始化本地数据库。
 
 ### Q: 前端刷新页面 404？
-A: 确认 `client/public/_redirects` 文件存在且已被构建到输出目录，该文件配置了 SPA fallback。
+A: SPA fallback 由 `functions/[[path]].js` 实现。所有非 API 的 GET 请求，只要请求 HTML 或路径不含扩展名，都会返回 `index.html`，确保 React Router 客户端路由正常工作。确认 `functions/[[path]].js` 文件存在并随部署一起上传。
 
 ### Q: 如何修改面试官名单？
 A: 编辑 `functions/lib/candidates-handler.js` 中的 `INTERVIEWERS` 数组，重新构建并部署即可。
