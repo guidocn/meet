@@ -347,6 +347,28 @@ Cloudflare Pages 只需要构建前端静态资源，**不要使用** `npm run b
 
 vite.config.ts 使用的 `@lark-apaas/coding-preset-vite-react` 是标准 npm 包，会随 `npm install` 正常安装，无需额外处理。
 
+### 问题：部署后页面空白，控制台报 basename 错误
+
+**症状**：
+```
+<Router basename="/{{basename}}"> is not able to match the URL "/" because it does not start with the basename
+```
+
+**根因**：妙搭模板的 vite preset 会在生产构建的 HTML 中注入 `window.__BASENAME__ = "{{basename}}"` 等 Handlebars 占位符，原本由妙搭运行时（vefaas）在渲染时替换为真实值。部署到 Cloudflare Pages 后，这些占位符不会被替换，导致 React Router 的 basename 变成了字面字符串 `/{{basename}}`，路由匹配失败，页面空白。
+
+**解决方案**：已在 `vite.config.ts` 中内置 `cloudflarePagesFix` 插件，构建时自动将所有 HBS 占位符替换为安全默认值：
+
+- `window.__BASENAME__` → `/`
+- `window.appId`、`window.userId` 等 → 空字符串
+- `window.ENVIRONMENT` → `production`
+
+无需额外配置，直接使用构建命令即可：
+```bash
+npx vite build --config vite.config.ts --outDir client-dist
+```
+
+> 另一个常见控制台报错 `Failed to init time offset: Unexpected token '<'` 来自妙搭 SDK 的监控上报模块（请求 `__runtime__/api/v1/observability/current_server_timestamp`），在 Cloudflare Pages 环境下该接口不存在因此返回 HTML。此错误不影响任何业务功能，可忽略。
+
 ### 完整的 Pages 构建设置参考
 
 | 设置项 | 值 |
