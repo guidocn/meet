@@ -35,7 +35,7 @@ const Layout = () => {
   const handleLogout = () => {
     localStorage.removeItem('admin_session');
     setSession(null);
-    navigate('/', { replace: true });
+    navigate('/login', { replace: true });
   };
 
   const navItems = isAdmin ? adminNavItems : publicNavItems;
