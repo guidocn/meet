@@ -451,6 +451,20 @@ export async function handleCheckIn(db, body) {
   return mapRowToCandidate(updated);
 }
 
+// 重新计算指定组所有待面试人员的组内序号，严格按全场序号升序（先来先面）
+async function recalculateGroupNumbers(db, groupName) {
+  const waitingList = await db
+    .prepare("SELECT id FROM candidates WHERE group_name = ? AND status = 'waiting' ORDER BY global_number ASC, _created_at ASC")
+    .bind(groupName)
+    .all();
+  for (let i = 0; i < waitingList.length; i++) {
+    await db
+      .prepare('UPDATE candidates SET group_number = ? WHERE id = ?')
+      .bind(i + 1, waitingList[i].id)
+      .run();
+  }
+}
+
 export async function handleAssignGroup(db, body) {
   if (!body.candidateId) throw badRequest('缺少考生ID');
   if (!body.groupName) throw badRequest('缺少组别');
@@ -466,17 +480,16 @@ export async function handleAssignGroup(db, body) {
   if (existing.status !== 'waiting') throw badRequest('该考生当前状态无法分配组别');
   if (existing.group_name) throw badRequest('该考生已分配组别，请使用改派接口');
 
-  const maxRow = await db
-    .prepare('SELECT COALESCE(MAX(group_number), 0) + 1 as new_num FROM candidates WHERE group_name = ?')
-    .bind(body.groupName)
-    .first();
-  const newGroupNumber = maxRow.new_num;
   const now = new Date().toISOString();
 
+  // 先设置组别，序号暂时设为0，随后统一重新计算
   await db
-    .prepare('UPDATE candidates SET group_name = ?, group_number = ?, _updated_at = ? WHERE id = ?')
-    .bind(body.groupName, newGroupNumber, now, body.candidateId)
+    .prepare('UPDATE candidates SET group_name = ?, group_number = 0, _updated_at = ? WHERE id = ?')
+    .bind(body.groupName, now, body.candidateId)
     .run();
+
+  // 严格按全场序号重新计算该组所有待面试人员的组内序号（先来先面）
+  await recalculateGroupNumbers(db, body.groupName);
 
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(body.candidateId).first();
   return mapRowToCandidate(updated);
@@ -498,17 +511,18 @@ export async function handleReassignGroup(db, body) {
   if (!existing.group_name) throw badRequest('该考生尚未分配组别，请先分配组别');
   if (existing.group_name === body.groupName) throw badRequest('考生已在该组别中');
 
-  const maxRow = await db
-    .prepare('SELECT COALESCE(MAX(group_number), 0) + 1 as new_num FROM candidates WHERE group_name = ?')
-    .bind(body.groupName)
-    .first();
-  const newGroupNumber = maxRow.new_num;
+  const oldGroup = existing.group_name;
   const now = new Date().toISOString();
 
+  // 先设置新组别，序号暂时设为0，随后统一重新计算
   await db
-    .prepare('UPDATE candidates SET group_name = ?, group_number = ?, _updated_at = ? WHERE id = ?')
-    .bind(body.groupName, newGroupNumber, now, body.candidateId)
+    .prepare('UPDATE candidates SET group_name = ?, group_number = 0, _updated_at = ? WHERE id = ?')
+    .bind(body.groupName, now, body.candidateId)
     .run();
+
+  // 严格按全场序号重新计算新旧两个组的组内序号（先来先面）
+  await recalculateGroupNumbers(db, body.groupName);
+  await recalculateGroupNumbers(db, oldGroup);
 
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(body.candidateId).first();
   return mapRowToCandidate(updated);

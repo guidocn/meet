@@ -194,6 +194,20 @@ const InterviewPage: React.FC = () => {
   const displayedQueue =
     queueViewMode === 'active' ? activeQueue : completedQueue;
 
+  // 分页：每页最多6个面试者
+  const PAGE_SIZE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(displayedQueue.length / PAGE_SIZE));
+  const pagedQueue = displayedQueue.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  // 切换视图模式时重置到第一页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [queueViewMode, currentGroup]);
+
   // 登录后加载队列
   useEffect(() => {
     if (session) {
@@ -524,7 +538,7 @@ const InterviewPage: React.FC = () => {
                        {queueViewMode === 'active' ? '暂无待面试考生' : '暂无已完成考生'}
                      </div>
                    )}
-                   {displayedQueue.map((candidate: Candidate) => {
+                   {pagedQueue.map((candidate: Candidate) => {
                     const isSelected =
                       selectedCandidate?.id === candidate.id;
                     const isInterviewing =
@@ -576,6 +590,32 @@ const InterviewPage: React.FC = () => {
                   })}
                 </div>
               </ScrollArea>
+              {/* 分页控件 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
+                  <span className="text-sm text-slate-500">
+                    第 {currentPage}/{totalPages} 页 · 共 {displayedQueue.length} 人
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 text-sm rounded-md border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                    >
+                      上一页
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 text-sm rounded-md border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                    >
+                      下一页
+                    </button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -856,7 +896,7 @@ const InterviewPage: React.FC = () => {
            </div>
          )}
          {!loading &&
-           displayedQueue.map((candidate: Candidate) => {
+           pagedQueue.map((candidate: Candidate) => {
              const isExpanded = selectedCandidateId === candidate.id;
              const isInterviewing = candidate.status === 'interviewing';
              const myScore = candidate.scores?.find(
@@ -1140,6 +1180,32 @@ const InterviewPage: React.FC = () => {
                </div>
              );
            })}
+           {/* 移动端分页控件 */}
+           {totalPages > 1 && (
+             <div className="flex items-center justify-between px-2 py-3 mt-2">
+               <span className="text-sm text-slate-500">
+                 第 {currentPage}/{totalPages} 页 · 共 {displayedQueue.length} 人
+               </span>
+               <div className="flex gap-2">
+                 <button
+                   type="button"
+                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                   disabled={currentPage === 1}
+                   className="px-3 py-1.5 text-sm rounded-md border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                 >
+                   上一页
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                   disabled={currentPage === totalPages}
+                   className="px-3 py-1.5 text-sm rounded-md border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                 >
+                   下一页
+                 </button>
+               </div>
+             </div>
+           )}
        </div>
      </div>
    );
