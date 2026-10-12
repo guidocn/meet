@@ -24,6 +24,8 @@ const FLOATING_STAFF: string[] = [
   '温嘉果',
   '冯梓珊',
   '何承熹',
+  '吴梓鑫',
+  '梁浩辉',
 ];
 
 type UserRole = 'admin' | 'floating' | 'interviewer';

@@ -22,6 +22,8 @@ const FLOATING_STAFF = [
   '温嘉果',
   '冯梓珊',
   '何承熹',
+  '吴梓鑫',
+  '梁浩辉',
 ];
 
 export const ADMIN_NAME = 'guido';
