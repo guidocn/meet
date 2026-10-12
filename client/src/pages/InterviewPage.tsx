@@ -44,7 +44,7 @@ import { ScrollArea } from '@client/src/components/ui/scroll-area';
   } from 'lucide-react';
 
 const SESSION_KEY = 'admin_session';
-const REFRESH_INTERVAL = 2000;
+const REFRESH_INTERVAL = 5000;
 const ADMIN_NAME = 'guido';
 const FLOATING_STAFF: string[] = [
   '梁文燕',

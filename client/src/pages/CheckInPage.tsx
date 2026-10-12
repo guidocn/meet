@@ -69,7 +69,7 @@ import {
 
 const PAGE_SIZE = 20;
 const GROUP_OPTIONS: GroupName[] = ['A', 'B', 'C', 'D'];
-const REFRESH_INTERVAL = 2000;
+const REFRESH_INTERVAL = 5000;
 
 // 分组按钮颜色映射，方便快速区分不同组
 const GROUP_COLORS: Record<GroupName, { bg: string; hover: string; border: string; text: string }> = {
