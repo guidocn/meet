@@ -28,6 +28,43 @@ const TAGS = [
   '技能提升',
 ];
 
+// 候场提示语：保持安静2句（高频出现），别紧张10句
+const QUIET_MESSAGES = [
+  '请保持安静，给面试者一个良好的面试环境',
+  '候场期间请保持安静，感谢您的配合',
+];
+
+const RELAX_MESSAGES = [
+  '别紧张，你已经准备得很好了',
+  '放轻松，就当是一次普通的交流',
+  '深呼吸，你可以的',
+  '面试官都很和蔼，不用害怕',
+  '把你最好的一面展示出来就行',
+  '结果不重要，重要的是这个过程',
+  '相信自己，你比想象中更优秀',
+  '就当是来认识新朋友的',
+  '慢慢来，不着急',
+  '加油，我们在维修队等你',
+];
+
+// 组合提示语：每3句别紧张插1句保持安静，保持安静频率更高
+const TIPS_MESSAGES = [
+  QUIET_MESSAGES[0],
+  RELAX_MESSAGES[0],
+  RELAX_MESSAGES[1],
+  RELAX_MESSAGES[2],
+  QUIET_MESSAGES[1],
+  RELAX_MESSAGES[3],
+  RELAX_MESSAGES[4],
+  RELAX_MESSAGES[5],
+  QUIET_MESSAGES[0],
+  RELAX_MESSAGES[6],
+  RELAX_MESSAGES[7],
+  RELAX_MESSAGES[8],
+  QUIET_MESSAGES[1],
+  RELAX_MESSAGES[9],
+];
+
 const GROUP_GRADIENTS: Record<string, string> = {
   A: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%)',
   B: 'linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)',
@@ -279,6 +316,8 @@ const DisplayPage = () => {
   const [data, setData] = useState<BigScreenData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [now, setNow] = useState<Date>(new Date());
+  const [tipIndex, setTipIndex] = useState<number>(0);
+  const [tipFading, setTipFading] = useState<boolean>(false);
 
   const signInUrl = useMemo(() => resolveAppUrl('/'), []);
 
@@ -384,6 +423,18 @@ const DisplayPage = () => {
       setNow(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // 候场提示语轮播，每5秒切换一次，带淡出淡入
+  useEffect(() => {
+    const tipTimer = setInterval(() => {
+      setTipFading(true);
+      setTimeout(() => {
+        setTipIndex((prev) => (prev + 1) % TIPS_MESSAGES.length);
+        setTipFading(false);
+      }, 500);
+    }, 5000);
+    return () => clearInterval(tipTimer);
   }, []);
 
   const waitingNum = data?.totalWaiting ?? 0;
@@ -692,6 +743,21 @@ const DisplayPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* 候场提示语轮播 */}
+      <div className="relative z-10 px-4 sm:px-6 md:px-10 py-3 flex-shrink-0 border-t border-cyan-500/20 bg-black/30 backdrop-blur-sm">
+        <div className="flex items-center justify-center gap-3">
+          <span className="flex-shrink-0 text-xs sm:text-sm px-2 py-1 rounded bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40">
+            温馨提示
+          </span>
+          <span
+            className="text-sm sm:text-base md:text-lg text-zinc-200 font-medium transition-opacity duration-500 text-center"
+            style={{ opacity: tipFading ? 0 : 1 }}
+          >
+            {TIPS_MESSAGES[tipIndex]}
+          </span>
+        </div>
+      </div>
 
       <style>{`
         @keyframes dataflow {
