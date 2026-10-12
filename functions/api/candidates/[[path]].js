@@ -64,14 +64,14 @@ export async function onRequest(context) {
       return jsonResponse(await handleGetDetailPublic(db, id));
     }
 
-    // 大屏数据
+    // 大屏数据（加3秒缓存，减少数据库压力，不影响签到接口）
     if (method === 'GET' && path === '/display/big-screen') {
-      return jsonResponse(await handleGetBigScreen(db));
+      return jsonResponse(await handleGetBigScreen(db), 3);
     }
 
-    // 各组统计
+    // 各组统计（加3秒缓存，减少数据库压力）
     if (method === 'GET' && path === '/group-counts') {
-      return jsonResponse(await handleGetGroupCounts(db));
+      return jsonResponse(await handleGetGroupCounts(db), 3);
     }
 
     // 面试官登录

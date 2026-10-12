@@ -344,10 +344,39 @@ const DisplayPage = () => {
 
   useEffect(() => {
     void fetchData();
-    const interval = setInterval(() => {
-      void fetchData();
-    }, 10000);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        void fetchData();
+      }, 15000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    // 页面可见时才轮询，隐藏时暂停，减少服务器压力
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchData();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
