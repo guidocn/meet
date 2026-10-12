@@ -1,0 +1,1 @@
+{"cases":[{"id":1,"priority":"p0","description":"打开候场大屏/display，页面无白屏，包含标题和四组卡片"},{"id":2,"priority":"p1","description":"大屏顶部显示logo图片和社团全称标题"},{"id":3,"priority":"p1","description":"大屏底部显示待面试人数和二维码区域"}]}

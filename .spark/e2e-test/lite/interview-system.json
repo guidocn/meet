@@ -1,0 +1,7 @@
+{"cases": [
+  {"id": 1, "priority": "p0", "description": "打开首页，验证预报名表单页正常加载，包含表单字段"},
+  {"id": 2, "priority": "p0", "description": "导航到签到分流台，验证页面标题和搜索区域存在"},
+  {"id": 3, "priority": "p0", "description": "导航到面试官工作台，验证组别选择和队列区域存在"},
+  {"id": 4, "priority": "p0", "description": "打开候场大屏页 /display，验证四组卡片和深色背景"},
+  {"id": 5, "priority": "p1", "description": "导航到结果管理页，验证筛选区和表格区域存在"}
+]}
