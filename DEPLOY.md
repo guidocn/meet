@@ -243,3 +243,67 @@ A: 编辑 `functions/lib/candidates-handler.js` 中的 `ADMIN_NAME` 常量，重
 
 ### Q: 如何添加新的部门选项？
 A: 部门选项在前端页面代码中（`client/src/pages/PreRegisterPage.tsx`），修改后重新构建前端并部署。
+
+## Cloudflare Pages 构建排障
+
+### 问题：npm ci 失败 / 依赖下载失败
+
+**根因**：项目 `.npmrc` 中配置了国内 npm 镜像源（`registry.npmmirror.com`），生成的 `package-lock.json` 中所有依赖的下载地址也指向该镜像。Cloudflare Pages 的构建环境位于海外，无法访问国内镜像源，导致 `npm ci` 下载依赖时超时或 404。
+
+### 解决方案（任选其一）
+
+#### 方案一：设置环境变量覆盖 registry（推荐，无需修改代码）
+
+在 Cloudflare Pages 项目设置中添加环境变量：
+
+- **变量名**：`NPM_CONFIG_REGISTRY`
+- **值**：`https://registry.npmjs.org/`
+
+添加后重新触发部署即可。npm 会优先使用环境变量指定的 registry，忽略 `.npmrc` 中的配置。
+
+#### 方案二：删除 package-lock.json 后上传
+
+在本地项目根目录执行：
+
+```bash
+rm package-lock.json
+```
+
+然后再上传代码到 Cloudflare Pages。Pages 检测不到 lock 文件时会自动改用 `npm install` 安装依赖，不再做严格校验。
+
+> **注意**：删除 lock 文件会导致每次安装的依赖版本可能有细微差异（在 semver 范围内），不影响功能但可能影响可复现性。
+
+#### 方案三：修改构建命令
+
+如果以上方案都不适用，可以在 Cloudflare Pages 的 **Build command** 中写完整的安装+构建命令：
+
+```
+npm install --registry=https://registry.npmjs.org/ && npx vite build --config vite.config.ts --outDir client-dist
+```
+
+> **注意**：此方案仅在 npm ci 成功但后续构建报错时有效。如果 npm ci 本身就失败（下载超时），构建命令不会被执行，请优先使用方案一或方案二。
+
+### Node.js 版本
+
+Cloudflare Pages 默认的 Node.js 版本可能较旧。本项目需要 Node.js 22+。
+
+在 Cloudflare Pages 项目设置中设置环境变量：
+
+- **变量名**：`NODE_VERSION`
+- **值**：`22`
+
+### 完整的 Pages 构建设置参考
+
+| 设置项 | 值 |
+|--------|----|
+| Framework preset | None |
+| Build command | `npx vite build --config vite.config.ts --outDir client-dist` |
+| Build output directory | `client-dist` |
+| Root directory | `/`（留空即可） |
+
+**环境变量**：
+
+| 变量名 | 值 | 说明 |
+|--------|----|------|
+| `NODE_VERSION` | `22` | Node.js 版本 |
+| `NPM_CONFIG_REGISTRY` | `https://registry.npmjs.org/` | 覆盖 npm 镜像源 |
