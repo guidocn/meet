@@ -5,7 +5,7 @@
 ## 前置准备
 
 1. 注册 [Cloudflare](https://dash.cloudflare.com/) 账号
-2. 安装 Node.js 18+ 和 npm
+2. 安装 Node.js 22+ 和 npm 10+（推荐使用 nvm 管理版本）
 3. 安装 wrangler CLI：
    ```bash
    npm install -g wrangler
@@ -68,6 +68,8 @@ npx vite build --config vite.config.ts --outDir client-dist
 
 ## 步骤四：部署到 Cloudflare Pages
 
+### 方式 A：命令行部署（推荐）
+
 首次部署需要创建 Pages 项目：
 
 ```bash
@@ -82,6 +84,21 @@ npx wrangler pages deploy client-dist
 ```
 
 部署成功后，Cloudflare 会给你一个 `*.pages.dev` 的访问地址。
+
+### 方式 B：Cloudflare 控制台在线部署（Git 连接）
+
+1. 将代码推送到 GitHub / GitLab 仓库
+2. 进入 Cloudflare Dashboard → Workers & Pages → Create → Pages → Connect to Git
+3. 选择你的仓库，点击 Begin setup
+4. **构建设置**：
+   - Framework preset: `None`
+   - Build command: `npx vite build --config vite.config.ts --outDir client-dist`
+   - Build output directory: `client-dist`
+   - Root directory: `/`（留空或填项目根目录）
+5. **环境变量**（如需要）：在 Environment variables 中添加
+6. 点击 Save and Deploy
+
+部署完成后，Cloudflare 会自动触发构建并部署，后续每次 push 到主分支都会自动重新部署。
 
 ## 本地开发
 
