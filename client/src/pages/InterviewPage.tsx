@@ -143,9 +143,10 @@ const InterviewPage: React.FC = () => {
     }
   }, [navigate]);
 
-  const fetchQueue = useCallback(async (group: GroupName) => {
+  const fetchQueue = useCallback(async (group: GroupName, isSilent = false) => {
     try {
-      setLoading(true);
+      // 静默刷新（定时轮询）时不显示loading，避免页面闪烁
+      if (!isSilent) setLoading(true);
       const data: Candidate[] = await candidates.getGroupQueue(
         group,
         session?.name,
@@ -157,7 +158,7 @@ const InterviewPage: React.FC = () => {
       setQueue(sorted);
     } catch (error) {
       logger.error('获取分组队列失败', error);
-      toast.error('获取队列失败，请刷新重试');
+      if (!isSilent) toast.error('获取队列失败，请刷新重试');
     } finally {
       setLoading(false);
     }
@@ -199,11 +200,11 @@ const InterviewPage: React.FC = () => {
     }
   }, [session, fetchQueue]);
 
-  // 自动刷新
+  // 自动刷新（静默刷新，不显示loading，保持页面状态）
   useEffect(() => {
     if (!session) return;
     const intervalId = setInterval(() => {
-      void fetchQueue(currentGroup);
+      void fetchQueue(currentGroup, true);
     }, REFRESH_INTERVAL);
     return () => clearInterval(intervalId);
   }, [session, fetchQueue, currentGroup]);
