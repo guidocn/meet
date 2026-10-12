@@ -284,10 +284,8 @@ const CheckInPage = () => {
 
       if (interviewStatusFilter !== 'all') {
         params.status = interviewStatusFilter;
-      } else {
-        // 选择"全部"时默认排除已完成，让待操作的全部显示在首页
-        params.excludeCompleted = true;
       }
+      // 选择"全部"时显示所有状态，后端三级排序：待操作→未签到→已完成
       if (groupFilter === 'none') {
         // Empty group - no param, we filter client side
       } else if (groupFilter !== 'all') {

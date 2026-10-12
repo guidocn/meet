@@ -367,11 +367,13 @@ export async function handleSearch(db, query) {
 
   let orderSql = '';
   if (sortBy === 'globalNumber') {
-    // 状态优先级：除已完成外所有状态都放前面，已完成放最后；同一优先级按全场序号升序
+    // 三级状态优先级：待操作(待面试/面试中/待审批) → 未签到(预报名) → 已完成
+    // 第一页显示待操作，然后是未签到，尾页才是已完成；同一优先级按全场序号升序
     orderSql = `ORDER BY 
       CASE 
-        WHEN status = 'completed' THEN 1
-        ELSE 0
+        WHEN status IN ('waiting', 'interviewing', 'pending_approval') THEN 0
+        WHEN status = 'pre_registered' THEN 1
+        ELSE 2
       END ASC,
       global_number ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, 
       _created_at ASC`;
