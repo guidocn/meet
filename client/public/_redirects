@@ -1,8 +1,16 @@
 /console   /index.html   200
+/console/  /index.html   200
 /login     /index.html   200
+/login/    /index.html   200
 /signin    /index.html   200
+/signin/   /index.html   200
 /ticket    /index.html   200
+/ticket/   /index.html   200
 /checkin   /index.html   200
+/checkin/  /index.html   200
 /interview /index.html   200
+/interview/ /index.html  200
 /results   /index.html   200
+/results/  /index.html   200
 /display   /index.html   200
+/display/  /index.html   200
