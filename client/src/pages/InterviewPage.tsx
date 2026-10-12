@@ -194,8 +194,8 @@ const InterviewPage: React.FC = () => {
   const displayedQueue =
     queueViewMode === 'active' ? activeQueue : completedQueue;
 
-  // 分页：每页最多6个面试者
-  const PAGE_SIZE = 6;
+  // 分页：每页最多5个面试者
+  const PAGE_SIZE = 5;
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(displayedQueue.length / PAGE_SIZE));
   const pagedQueue = displayedQueue.slice(
