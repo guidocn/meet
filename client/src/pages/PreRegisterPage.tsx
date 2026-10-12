@@ -717,8 +717,9 @@ const PreRegisterPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        <div className="mt-5 flex justify-center">
-          </div>
+        <div className="mt-8 text-center text-xs text-slate-400">
+          此系统由义务电脑维修队开发
+        </div>
       </div>
 
       <Dialog

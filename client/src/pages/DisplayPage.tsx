@@ -575,6 +575,21 @@ const DisplayPage = () => {
         </div>
       </header>
 
+      {/* 候场温馨提示 - 顶部中间显示 */}
+      <div className="relative z-10 px-4 sm:px-6 md:px-10 py-2 flex-shrink-0">
+        <div className="flex items-center justify-center gap-3 mx-auto max-w-3xl">
+          <span className="flex-shrink-0 text-xs sm:text-sm px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40">
+            温馨提示
+          </span>
+          <span
+            className="text-sm sm:text-base md:text-lg text-zinc-200 font-medium transition-opacity duration-500 text-center"
+            style={{ opacity: tipFading ? 0 : 1 }}
+          >
+            {TIPS_MESSAGES[tipIndex]}
+          </span>
+        </div>
+      </div>
+
       <main className="flex-1 relative z-10 px-4 sm:px-6 md:px-10 py-4 sm:py-6 min-h-0">
         {loading || !data ? (
           <div className="flex items-center justify-center h-full">
@@ -742,22 +757,10 @@ const DisplayPage = () => {
             </span>
           </div>
         </div>
-      </footer>
-
-      {/* 候场提示语轮播 */}
-      <div className="relative z-10 px-4 sm:px-6 md:px-10 py-3 flex-shrink-0 border-t border-cyan-500/20 bg-black/30 backdrop-blur-sm">
-        <div className="flex items-center justify-center gap-3">
-          <span className="flex-shrink-0 text-xs sm:text-sm px-2 py-1 rounded bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40">
-            温馨提示
-          </span>
-          <span
-            className="text-sm sm:text-base md:text-lg text-zinc-200 font-medium transition-opacity duration-500 text-center"
-            style={{ opacity: tipFading ? 0 : 1 }}
-          >
-            {TIPS_MESSAGES[tipIndex]}
-          </span>
+        <div className="mt-3 text-center text-xs text-zinc-500">
+          此系统由义务电脑维修队开发
         </div>
-      </div>
+      </footer>
 
       <style>{`
         @keyframes dataflow {
