@@ -108,7 +108,7 @@ function mapRowToCandidate(row, scores = []) {
     scoredCount,
     groupInterviewerCount,
     scores,
-    createdAt: row.created_at,
+    createdAt: row._created_at,
   };
 }
 
@@ -119,7 +119,7 @@ function mapScoreRow(row) {
     groupName: row.group_name,
     score: Number(row.score),
     judgeComment: row.judge_comment || null,
-    createdAt: row.created_at,
+    createdAt: row._created_at,
   };
 }
 
@@ -152,7 +152,7 @@ async function getScoresByCandidateIds(db, ids) {
   const placeholders = ids.map(() => '?').join(',');
   const result = await db
     .prepare(
-      `SELECT * FROM interviewer_scores WHERE candidate_id IN (${placeholders}) ORDER BY created_at ASC`,
+      `SELECT * FROM interviewer_scores WHERE candidate_id IN (${placeholders}) ORDER BY _created_at ASC`,
     )
     .bind(...ids)
     .all();
@@ -180,7 +180,7 @@ export async function handlePreRegister(db, dto) {
   const now = new Date().toISOString();
   await db
     .prepare(
-      `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, created_at, updated_at)
+      `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
     )
     .bind(
@@ -227,7 +227,7 @@ export async function handlePreRegisterPublic(db, dto) {
   const now = new Date().toISOString();
   await db
     .prepare(
-      `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, created_at, updated_at)
+      `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
     )
     .bind(
@@ -253,7 +253,7 @@ export async function handleSearchByNamePublic(db, dto) {
   if (!name) throw badRequest('请输入姓名');
 
   const result = await db
-    .prepare('SELECT * FROM candidates WHERE name = ? ORDER BY created_at DESC')
+    .prepare('SELECT * FROM candidates WHERE name = ? ORDER BY _created_at DESC')
     .bind(name)
     .all();
 
@@ -282,7 +282,7 @@ export async function handleCheckInPublic(db, dto) {
 
   await db
     .prepare(
-      "UPDATE candidates SET status = 'waiting', global_number = ?, updated_at = ? WHERE id = ?",
+      "UPDATE candidates SET status = 'waiting', global_number = ?, _updated_at = ? WHERE id = ?",
     )
     .bind(newGlobalNumber, now, dto.candidateId)
     .run();
@@ -305,7 +305,7 @@ export async function handlePublicUpdateDepartments(db, body) {
   const now = new Date().toISOString();
   await db
     .prepare(
-      'UPDATE candidates SET first_department = ?, second_department = ?, updated_at = ? WHERE id = ?',
+      'UPDATE candidates SET first_department = ?, second_department = ?, _updated_at = ? WHERE id = ?',
     )
     .bind(firstDepartment.trim(), secondDepartment?.trim() || null, now, candidateId)
     .run();
@@ -363,9 +363,9 @@ export async function handleSearch(db, query) {
 
   let orderSql = '';
   if (sortBy === 'globalNumber') {
-    orderSql = `ORDER BY global_number ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, created_at ASC`;
+    orderSql = `ORDER BY global_number ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, _created_at ASC`;
   } else if (sortBy === 'createdAt') {
-    orderSql = `ORDER BY created_at ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
+    orderSql = `ORDER BY _created_at ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
   } else {
     orderSql = `ORDER BY (SELECT AVG(score) FROM interviewer_scores WHERE candidate_id = candidates.id) ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, global_number ASC`;
   }
@@ -428,7 +428,7 @@ export async function handleCheckIn(db, body) {
   const now = new Date().toISOString();
 
   await db
-    .prepare("UPDATE candidates SET status = 'waiting', global_number = ?, updated_at = ? WHERE id = ?")
+    .prepare("UPDATE candidates SET status = 'waiting', global_number = ?, _updated_at = ? WHERE id = ?")
     .bind(newGlobalNumber, now, body.candidateId)
     .run();
 
@@ -459,7 +459,7 @@ export async function handleAssignGroup(db, body) {
   const now = new Date().toISOString();
 
   await db
-    .prepare('UPDATE candidates SET group_name = ?, group_number = ?, updated_at = ? WHERE id = ?')
+    .prepare('UPDATE candidates SET group_name = ?, group_number = ?, _updated_at = ? WHERE id = ?')
     .bind(body.groupName, newGroupNumber, now, body.candidateId)
     .run();
 
@@ -491,7 +491,7 @@ export async function handleReassignGroup(db, body) {
   const now = new Date().toISOString();
 
   await db
-    .prepare('UPDATE candidates SET group_name = ?, group_number = ?, updated_at = ? WHERE id = ?')
+    .prepare('UPDATE candidates SET group_name = ?, group_number = ?, _updated_at = ? WHERE id = ?')
     .bind(body.groupName, newGroupNumber, now, body.candidateId)
     .run();
 
@@ -528,7 +528,7 @@ export async function handleBatchImport(db, body) {
       const now = new Date().toISOString();
       await db
         .prepare(
-          `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, created_at, updated_at)
+          `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
         )
         .bind(
@@ -833,7 +833,7 @@ export async function handleUpdateStatus(db, id, body) {
   }
 
   const now = new Date().toISOString();
-  await db.prepare('UPDATE candidates SET status = ?, updated_at = ? WHERE id = ?').bind(newStatus, now, id).run();
+  await db.prepare('UPDATE candidates SET status = ?, _updated_at = ? WHERE id = ?').bind(newStatus, now, id).run();
 
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   const scores = await getScoresByCandidateIds(db, [id]);
@@ -875,7 +875,7 @@ export async function handleSubmitScore(db, id, body) {
   if (existingScore) {
     await db
       .prepare(
-        'UPDATE interviewer_scores SET score = ?, judge_comment = ?, updated_at = ? WHERE id = ?',
+        'UPDATE interviewer_scores SET score = ?, judge_comment = ?, _updated_at = ? WHERE id = ?',
       )
       .bind(scoreNum, judgeComment || null, now, existingScore.id)
       .run();
@@ -883,14 +883,14 @@ export async function handleSubmitScore(db, id, body) {
     const scoreId = generateUUID();
     await db
       .prepare(
-        'INSERT INTO interviewer_scores (id, candidate_id, interviewer_name, group_name, score, judge_comment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO interviewer_scores (id, candidate_id, interviewer_name, group_name, score, judge_comment, _created_at, _updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       )
       .bind(scoreId, id, interviewerName, candidateGroup, scoreNum, judgeComment || null, now, now)
       .run();
   }
 
   const scoresResult = await db
-    .prepare('SELECT * FROM interviewer_scores WHERE candidate_id = ? ORDER BY created_at ASC')
+    .prepare('SELECT * FROM interviewer_scores WHERE candidate_id = ? ORDER BY _created_at ASC')
     .bind(id)
     .all();
   const allScores = scoresResult.results || [];
@@ -903,7 +903,7 @@ export async function handleSubmitScore(db, id, body) {
       : 0;
 
   await db
-    .prepare('UPDATE candidates SET score_total = ?, updated_at = ? WHERE id = ?')
+    .prepare('UPDATE candidates SET score_total = ?, _updated_at = ? WHERE id = ?')
     .bind(Math.round(avgScore * 10), now, id)
     .run();
 
@@ -923,7 +923,7 @@ export async function handleApprove(db, id, body) {
   if (existing.status !== 'pending_approval') throw badRequest('当前考生状态不是待审批，无法审批通过');
 
   const now = new Date().toISOString();
-  await db.prepare("UPDATE candidates SET status = 'completed', updated_at = ? WHERE id = ?").bind(now, id).run();
+  await db.prepare("UPDATE candidates SET status = 'completed', _updated_at = ? WHERE id = ?").bind(now, id).run();
 
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   const scores = await getScoresByCandidateIds(db, [id]);
