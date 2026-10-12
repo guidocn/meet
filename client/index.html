@@ -2,13 +2,65 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="/logo.png">
+  <link rel="preload" href="/logo.png" as="image">
   <title>党支部义务电脑维修队</title>
   <script>window.__platform__ = {};</script>
+  <style>
+    /* 极简首屏loading，JS加载完成前立即显示，无需等待 */
+    #app-loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #f8fafc;
+      z-index: 9999;
+    }
+    #app-loading .logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+    }
+    #app-loading .text {
+      font-size: 16px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    #app-loading .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: app-spin 0.8s linear infinite;
+    }
+    @keyframes app-spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- 内联首屏loading，无需等待JS加载，扫码立即显示 -->
+    <div id="app-loading">
+      <div class="logo">修</div>
+      <div class="spinner"></div>
+      <div class="text">党支部义务电脑维修队</div>
+    </div>
+  </div>
   <script type="module" src="./src/index.tsx"></script>
 </body>
 </html>

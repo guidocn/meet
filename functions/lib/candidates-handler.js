@@ -339,6 +339,10 @@ function buildSearchWhere(query, params) {
     conditions.push('status = ?');
     params.push(query.status);
   }
+  // 选择"全部"时默认排除已完成，让待操作的全部显示在首页
+  if (query.excludeCompleted === 'true' || query.excludeCompleted === true) {
+    conditions.push("status != 'completed'");
+  }
   return conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 }
 
