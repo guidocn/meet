@@ -1,2 +1,8 @@
-# SPA fallback 由 functions/[[path]].js 处理
-# 不要在这里写 /* /index.html 200，会与 Pages Functions 冲突导致 Infinite loop
+/console   /index.html   200
+/login     /index.html   200
+/signin    /index.html   200
+/ticket    /index.html   200
+/checkin   /index.html   200
+/interview /index.html   200
+/results   /index.html   200
+/display   /index.html   200
