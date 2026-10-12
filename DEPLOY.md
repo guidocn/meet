@@ -63,10 +63,12 @@ wrangler d1 execute interview-system-db --file=./schema.sql
 ## 步骤三：构建前端
 
 ```bash
-npx vite build --config vite.config.ts --outDir client-dist
+BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist
 ```
 
 构建产物会输出到 `client-dist/` 目录。wrangler.toml 中 `pages_build_output_dir` 已指向该目录。
+
+> **重要**：必须设置 `BUILD_TARGET=cloudflare` 环境变量，否则 basename 和静态资源路径会指向妙搭运行时路径，导致页面空白。
 
 ## 步骤四：部署到 Cloudflare Pages
 
@@ -81,7 +83,7 @@ npx wrangler pages deploy client-dist --project-name=interview-system
 之后每次更新，执行：
 
 ```bash
-npx vite build --config vite.config.ts --outDir client-dist
+BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist
 npx wrangler pages deploy client-dist
 ```
 
@@ -94,7 +96,7 @@ npx wrangler pages deploy client-dist
 3. 选择你的仓库，点击 Begin setup
 4. **构建设置**：
    - Framework preset: `None`
-   - Build command: `npx vite build --config vite.config.ts --outDir client-dist`
+   - Build command: `BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist`
    - Build output directory: `client-dist`
    - Root directory: `/`（留空或填项目根目录）
 5. **环境变量**（如需要）：在 Environment variables 中添加
@@ -124,7 +126,7 @@ wrangler d1 create interview-system-db --local
 wrangler d1 execute interview-system-db --local --file=./schema.sql
 
 # 构建前端
-npx vite build --config vite.config.ts --outDir client-dist
+BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist
 
 # 启动本地 Pages Dev 服务器
 npx wrangler pages dev client-dist --d1=DB
@@ -133,7 +135,7 @@ npx wrangler pages dev client-dist --d1=DB
 本地访问地址：`http://localhost:8788`
 
 > **注意**：本地开发时，前端代码修改后需要重新构建才能生效。
-> 如需热更新，可在另一个终端运行 `npx vite build --config vite.config.ts --outDir client-dist --watch`。
+> 如需热更新，可在另一个终端运行 `BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist --watch`。
 
 ## 功能说明
 
@@ -292,7 +294,7 @@ rm package-lock.json
 如果以上方案都不适用，可以在 Cloudflare Pages 的 **Build command** 中写完整的安装+构建命令：
 
 ```
-npm install --registry=https://registry.npmjs.org/ && npx vite build --config vite.config.ts --outDir client-dist
+npm install --registry=https://registry.npmjs.org/ && BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist
 ```
 
 > **注意**：此方案仅在 npm ci 成功但后续构建报错时有效。如果 npm ci 本身就失败（下载超时），构建命令不会被执行，请优先使用方案一或方案二。
@@ -356,7 +358,7 @@ Cloudflare Pages 只需要构建前端静态资源，**不要使用** `npm run b
 
 | 设置项 | 值 |
 |--------|----|
-| Build command | `npx vite build --config vite.config.ts --outDir client-dist` |
+| Build command | `BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist` |
 | Build output directory | `client-dist` |
 
 vite.config.ts 使用的 `@lark-apaas/coding-preset-vite-react` 是标准 npm 包，会随 `npm install` 正常安装，无需额外处理。
@@ -393,7 +395,7 @@ BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-d
 | 设置项 | 值 |
 |--------|----|
 | Framework preset | None |
-| Build command | `npx vite build --config vite.config.ts --outDir client-dist` |
+| Build command | `BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist` |
 | Build output directory | `client-dist` |
 | Root directory | `/`（留空即可） |
 
