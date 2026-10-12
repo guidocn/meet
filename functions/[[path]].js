@@ -10,7 +10,7 @@ const HTML_HEADERS = {
 async function tryReadFromAssets(env, request) {
   if (!env || !env.ASSETS || typeof env.ASSETS.fetch !== 'function') return null;
   try {
-    const indexUrl = new URL('/client/index.html', request.url).toString();
+    const indexUrl = new URL('/index.html', request.url).toString();
     const res = await env.ASSETS.fetch(indexUrl);
     if (!res || !res.ok) return null;
     const html = await res.text();
