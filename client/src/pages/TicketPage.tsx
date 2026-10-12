@@ -327,15 +327,6 @@ const TicketPage: React.FC = () => {
                     <CheckCircle2 className="w-5 h-5" />
                     <span className="font-semibold">已完成一轮面试</span>
                   </div>
-                  {candidate.averageScore != null && (
-                    <p className="text-sm text-slate-600">
-                      最终得分：
-                      <span className="font-bold text-indigo-600 text-lg ml-1">
-                        {candidate.averageScore.toFixed(2)}
-                      </span>
-                      <span className="text-slate-400"> 分</span>
-                    </p>
-                  )}
                   <p className="text-sm text-slate-500">{statusInfo.desc}</p>
                 </div>
               )}
