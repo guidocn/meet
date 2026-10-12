@@ -7,9 +7,9 @@ import { Button } from '@client/src/components/ui/button';
 import { readSession, type AdminSession } from './ProtectedRoute';
 import { Image } from '@client/src/components/ui/image';
 
+// 信息签到页面独立，不显示候场大屏导航（候场大屏是独立页面，通过/display或二维码访问）
 const publicNavItems = [
   { path: '/', label: '信息签到', end: true },
-  { path: '/display', label: '候场大屏', end: false },
 ];
 
 const adminNavItems = [
