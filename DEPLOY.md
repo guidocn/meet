@@ -292,6 +292,61 @@ Cloudflare Pages 默认的 Node.js 版本可能较旧。本项目需要 Node.js 
 - **变量名**：`NODE_VERSION`
 - **值**：`22`
 
+### 问题：postinstall 脚本报错 fullstack-cli: command not found
+
+**根因**：package.json 中的 `postinstall` 脚本运行 `fullstack-cli action-plugin init`，该命令属于妙搭平台内置 CLI（`@lark-apaas/fullstack-cli`），仅在妙搭开发环境中可用。Cloudflare Pages / Functions 环境安装依赖后自动执行 postinstall，找不到该命令导致构建失败。
+
+**症状**：
+```
+ERR_PNPM_PREPARE_PHASE_NO_DEPENDENCY  
+fullstack-cli: command not found
+```
+
+### 解决方案（任选其一）
+
+#### 方案一：设置环境变量跳过脚本（最简单，推荐）
+
+在 Cloudflare Pages 项目设置中添加环境变量：
+
+- **变量名**：`NPM_CONFIG_IGNORE_SCRIPTS`
+- **值**：`true`
+
+或（如果使用 bun/pnpm）：
+
+- **变量名**：`NPM_CONFIG_IGNORE_SCRIPTS`
+- **值**：`true`
+
+> 这会让 npm/bun/pnpm 跳过所有生命周期脚本（preinstall、postinstall、prepare 等）。prepare 脚本只是设置 git hooks，在 Cloudflare 构建环境中不需要。
+
+#### 方案二：手动删除 package.json 中的 postinstall 字段
+
+在本地用编辑器打开 `package.json`，找到 `scripts` 部分，删除下面这一行：
+
+```json
+"postinstall": "fullstack-cli action-plugin init"
+```
+
+然后再上传代码到 Cloudflare Pages。
+
+#### 方案三：在构建命令中绕过
+
+> 注意：如果 npm install 阶段就失败了，构建命令不会被执行。此方案仅适用于已经跳过 install 阶段脚本的场景。
+
+### 问题：build 脚本依赖 fullstack-cli
+
+**根因**：项目默认的 `build` 脚本指向 `./scripts/build.sh`，该脚本第一步就执行 `npx fullstack-cli action-plugin init`，这是妙搭平台的插件初始化步骤，在 Cloudflare Pages 环境中不可用。
+
+### 解决方案：直接使用 vite build
+
+Cloudflare Pages 只需要构建前端静态资源，**不要使用** `npm run build`（那是全栈构建，包含服务端编译和依赖裁剪）。直接用 vite 构建前端即可：
+
+| 设置项 | 值 |
+|--------|----|
+| Build command | `npx vite build --config vite.config.ts --outDir client-dist` |
+| Build output directory | `client-dist` |
+
+vite.config.ts 使用的 `@lark-apaas/coding-preset-vite-react` 是标准 npm 包，会随 `npm install` 正常安装，无需额外处理。
+
 ### 完整的 Pages 构建设置参考
 
 | 设置项 | 值 |
@@ -307,3 +362,4 @@ Cloudflare Pages 默认的 Node.js 版本可能较旧。本项目需要 Node.js 
 |--------|----|------|
 | `NODE_VERSION` | `22` | Node.js 版本 |
 | `NPM_CONFIG_REGISTRY` | `https://registry.npmjs.org/` | 覆盖 npm 镜像源 |
+| `NPM_CONFIG_IGNORE_SCRIPTS` | `true` | 跳过 postinstall 等生命周期脚本 |
