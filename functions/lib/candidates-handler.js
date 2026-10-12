@@ -103,7 +103,7 @@ function mapRowToCandidate(row, scores = []) {
     acceptAdjust: row.accept_adjust || null,
     globalNumber: row.global_number || null,
     groupName: row.group_name || null,
-    groupNumber: row.group_number || null,
+    groupNumber: row.group_number ?? null,
     status: row.status || 'pre_registered',
     scoreTotal: row.score_total || 0,
     averageScore,
@@ -678,7 +678,7 @@ export async function handleExportCsv(db, query) {
 
     const line = [
       row.global_number || '',
-      row.group_number || '',
+      row.group_number ?? '',
       row.name,
       row.class_name || '',
       dept,
