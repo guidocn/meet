@@ -354,17 +354,22 @@ vite.config.ts 使用的 `@lark-apaas/coding-preset-vite-react` 是标准 npm �
 <Router basename="/{{basename}}"> is not able to match the URL "/" because it does not start with the basename
 ```
 
-**根因**：妙搭模板的 vite preset 会在生产构建的 HTML 中注入 `window.__BASENAME__ = "{{basename}}"` 等 Handlebars 占位符，原本由妙搭运行时（vefaas）在渲染时替换为真实值。部署到 Cloudflare Pages 后，这些占位符不会被替换，导致 React Router 的 basename 变成了字面字符串 `/{{basename}}`，路由匹配失败，页面空白。
+**根因**：妙搭模板的 vite preset 在生产构建时做了三件事：① 向 HTML 注入 `window.__BASENAME__ = "{{basename}}"` 等 Handlebars 占位符；② 通过 `basename-injection` 插件改写入口 JS，将 `process.env.CLIENT_BASE_PATH` 替换为运行时读 `window.__BASENAME__` 的表达式；③ 将 Vite `base` 设为 `/app/<appId>/`。这些原本由妙搭运行时 vefaas 渲染时替换，但部署到 Cloudflare Pages 后没人替换，导致 React Router 的 basename 是字面字符串 `/{{basename}}`、静态资源路径也带前缀，路由匹配失败 + 资源 404，整页空白。
 
-**解决方案**：已在 `vite.config.ts` 中内置 `cloudflarePagesFix` 插件，构建时自动将所有 HBS 占位符替换为安全默认值：
+**解决方案**：`vite.config.ts` 中内置 `cloudflarePagesFix` 插件，从三层彻底修复：
 
-- `window.__BASENAME__` → `/`
-- `window.appId`、`window.userId` 等 → 空字符串
-- `window.ENVIRONMENT` → `production`
+1. **Vite base**：设置 `CF_PAGES=1` 环境变量时，将 `base` 强制设为 `/`，所有静态资源走根路径
+2. **HTML 占位符**：构建时将 `{{basename}}`、`{{appId}}`、`{{userId}}`、`{{appName}}`、`{{appAvatar}}` 等所有 HBS 占位符全部替换为实际值
+3. **JS bundle**：在 `generateBundle` 阶段扫描所有 chunk，将 `window.__BASENAME__` 的运行时读取表达式直接替换为硬编码 `"/"`
 
-无需额外配置，直接使用构建命令即可：
+**使用方式**：构建时设置 `CF_PAGES=1` 环境变量：
 ```bash
-npx vite build --config vite.config.ts --outDir client-dist
+CF_PAGES=1 npx vite build --config vite.config.ts --outDir client-dist
+```
+
+在 Cloudflare Pages 控制台的 Build command 里直接设置：
+```bash
+CF_PAGES=1 npx vite build --config vite.config.ts --outDir client-dist
 ```
 
 > 另一个常见控制台报错 `Failed to init time offset: Unexpected token '<'` 来自妙搭 SDK 的监控上报模块（请求 `__runtime__/api/v1/observability/current_server_timestamp`），在 Cloudflare Pages 环境下该接口不存在因此返回 HTML。此错误不影响任何业务功能，可忽略。
@@ -385,3 +390,4 @@ npx vite build --config vite.config.ts --outDir client-dist
 | `NODE_VERSION` | `22` | Node.js 版本 |
 | `NPM_CONFIG_REGISTRY` | `https://registry.npmjs.org/` | 覆盖 npm 镜像源 |
 | `NPM_CONFIG_IGNORE_SCRIPTS` | `true` | 跳过 postinstall 等生命周期脚本 |
+| `CF_PAGES` | `1` | 启用 Cloudflare Pages 适配（base=/、替换 HBS 占位符、硬编码 basename） |
