@@ -2,10 +2,7 @@ import path from 'path';
 import { defineConfig } from '@lark-apaas/coding-preset-vite-react';
 import type { PluginOption } from 'vite';
 
-const isCloudflarePages =
-  process.env.CF_PAGES === '1' ||
-  process.env.CLOUDFLARE_PAGES === '1' ||
-  process.env.DEPLOY_TARGET === 'cloudflare-pages';
+const isCloudflarePages = process.env.BUILD_TARGET === 'cloudflare';
 
 function cloudflarePagesFix(): PluginOption {
   return {
@@ -57,5 +54,5 @@ export default defineConfig({
     },
   },
   plugins: [cloudflarePagesFix()],
-  ...(isCloudflarePages ? { base: '/' } : {}),
+  base: isCloudflarePages ? '/' : undefined,
 });

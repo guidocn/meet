@@ -358,18 +358,18 @@ vite.config.ts 使用的 `@lark-apaas/coding-preset-vite-react` 是标准 npm �
 
 **解决方案**：`vite.config.ts` 中内置 `cloudflarePagesFix` 插件，从三层彻底修复：
 
-1. **Vite base**：设置 `CF_PAGES=1` 环境变量时，将 `base` 强制设为 `/`，所有静态资源走根路径
+1. **Vite base**：设置 `BUILD_TARGET=cloudflare` 环境变量时，将 `base` 强制设为 `/`，所有静态资源走根路径
 2. **HTML 占位符**：构建时将 `{{basename}}`、`{{appId}}`、`{{userId}}`、`{{appName}}`、`{{appAvatar}}` 等所有 HBS 占位符全部替换为实际值
 3. **JS bundle**：在 `generateBundle` 阶段扫描所有 chunk，将 `window.__BASENAME__` 的运行时读取表达式直接替换为硬编码 `"/"`
 
-**使用方式**：构建时设置 `CF_PAGES=1` 环境变量：
+**使用方式**：构建时设置 `BUILD_TARGET=cloudflare` 环境变量：
 ```bash
-CF_PAGES=1 npx vite build --config vite.config.ts --outDir client-dist
+BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist
 ```
 
 在 Cloudflare Pages 控制台的 Build command 里直接设置：
 ```bash
-CF_PAGES=1 npx vite build --config vite.config.ts --outDir client-dist
+BUILD_TARGET=cloudflare npx vite build --config vite.config.ts --outDir client-dist
 ```
 
 > 另一个常见控制台报错 `Failed to init time offset: Unexpected token '<'` 来自妙搭 SDK 的监控上报模块（请求 `__runtime__/api/v1/observability/current_server_timestamp`），在 Cloudflare Pages 环境下该接口不存在因此返回 HTML。此错误不影响任何业务功能，可忽略。
@@ -390,4 +390,4 @@ CF_PAGES=1 npx vite build --config vite.config.ts --outDir client-dist
 | `NODE_VERSION` | `22` | Node.js 版本 |
 | `NPM_CONFIG_REGISTRY` | `https://registry.npmjs.org/` | 覆盖 npm 镜像源 |
 | `NPM_CONFIG_IGNORE_SCRIPTS` | `true` | 跳过 postinstall 等生命周期脚本 |
-| `CF_PAGES` | `1` | 启用 Cloudflare Pages 适配（base=/、替换 HBS 占位符、硬编码 basename） |
+| `BUILD_TARGET` | `cloudflare` | 启用 Cloudflare Pages 适配（base=/、替换 HBS 占位符、硬编码 basename） |
