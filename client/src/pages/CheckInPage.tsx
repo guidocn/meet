@@ -880,7 +880,7 @@ const CheckInPage = () => {
       return (
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">
-            {candidate.groupName}组 · {candidate.groupNumber ?? '-'}号
+            {candidate.groupName}组 · {candidate.groupNumber || '-'}号
           </span>
           <Button
             size="sm"
@@ -902,7 +902,7 @@ const CheckInPage = () => {
         <div className="flex flex-col gap-2 items-start">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500">
-              {candidate.groupName}组 · {candidate.groupNumber ?? '-'}号
+              {candidate.groupName}组 · {candidate.groupNumber || '-'}号
             </span>
             {renderInterviewStatusBadge(candidate.status)}
             {canOperateFlow && (
@@ -935,7 +935,7 @@ const CheckInPage = () => {
       return (
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500">
-            {candidate.groupName}组 · {candidate.groupNumber ?? '-'}号
+            {candidate.groupName}组 · {candidate.groupNumber || '-'}号
           </span>
           {renderInterviewStatusBadge(candidate.status)}
         </div>
@@ -1193,7 +1193,7 @@ const CheckInPage = () => {
                     <TableCell>{renderStatusBadge(item.status)}</TableCell>
                     <TableCell>{renderGroupBadge(item.groupName)}</TableCell>
                     <TableCell className="font-mono">
-                      {item.groupNumber ?? '-'}
+                      {item.groupNumber || '-'}
                     </TableCell>
                     <TableCell>{renderInterviewStatusBadge(item.status)}</TableCell>
                     <TableCell className="text-right">
@@ -1280,7 +1280,7 @@ const CheckInPage = () => {
                  {item.groupName && item.status === 'waiting' && (
                    <div className="flex items-center justify-between">
                      <span className="text-sm text-slate-600">
-                       {item.groupName}组 · <span className="font-medium">{item.groupNumber ?? '-'}</span>号
+                       {item.groupName}组 · <span className="font-medium">{item.groupNumber || '-'}</span>号
                      </span>
                      <Button
                        variant="outline"
@@ -1298,7 +1298,7 @@ const CheckInPage = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-slate-600">
-                          {item.groupName}组 · <span className="font-medium">{item.groupNumber ?? '-'}</span>号
+                          {item.groupName}组 · <span className="font-medium">{item.groupNumber || '-'}</span>号
                         </span>
                         {renderInterviewStatusBadge(item.status)}
                       </div>
@@ -1327,7 +1327,7 @@ const CheckInPage = () => {
                   {item.groupName && item.status !== 'waiting' && item.status !== 'pending_approval' && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600">
-                        {item.groupName}组 · <span className="font-medium">{item.groupNumber ?? '-'}</span>号
+                        {item.groupName}组 · <span className="font-medium">{item.groupNumber || '-'}</span>号
                       </span>
                       {renderInterviewStatusBadge(item.status)}
                     </div>
