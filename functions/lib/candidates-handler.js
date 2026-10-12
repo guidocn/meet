@@ -363,7 +363,14 @@ export async function handleSearch(db, query) {
 
   let orderSql = '';
   if (sortBy === 'globalNumber') {
-    orderSql = `ORDER BY global_number ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, _created_at ASC`;
+    // 状态优先级：待面试/待审核/面试中 排在前面，已完成/缺考 排在后面
+    orderSql = `ORDER BY 
+      CASE 
+        WHEN status IN ('waiting', 'pending_approval', 'interviewing') THEN 0
+        ELSE 1
+      END ASC,
+      global_number ${sortOrder === 'asc' ? 'ASC' : 'DESC'}, 
+      _created_at ASC`;
   } else if (sortBy === 'createdAt') {
     orderSql = `ORDER BY _created_at ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
   } else {

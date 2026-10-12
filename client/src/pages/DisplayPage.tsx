@@ -389,7 +389,7 @@ const DisplayPage = () => {
       if (interval) return;
       interval = setInterval(() => {
         void fetchData();
-      }, 15000);
+      }, 3000);
     };
 
     const stopPolling = () => {
