@@ -160,13 +160,17 @@ export async function onRequest(context) {
   }
 }
 
-function jsonResponse(data) {
-  return new Response(JSON.stringify(data), {
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
+function jsonResponse(data, cacheSeconds = 0) {
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Access-Control-Allow-Origin': '*',
+  };
+  if (cacheSeconds > 0) {
+    headers['Cache-Control'] = `public, max-age=${cacheSeconds}, stale-while-revalidate=30`;
+  } else {
+    headers['Cache-Control'] = 'no-cache';
+  }
+  return new Response(JSON.stringify(data), { headers });
 }
 
 function errorResponse(status, message) {
