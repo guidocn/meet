@@ -176,13 +176,15 @@ export async function handlePreRegister(db, dto) {
   if (!dto.name || !dto.name.trim()) {
     throw badRequest('姓名为必填项');
   }
+  const id = generateUUID();
   const now = new Date().toISOString();
   await db
     .prepare(
-      `INSERT INTO candidates (name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
+      `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
     )
     .bind(
+      id,
       dto.name.trim(),
       dto.gender?.trim() || null,
       dto.className?.trim() || null,
@@ -195,7 +197,7 @@ export async function handlePreRegister(db, dto) {
     )
     .run();
 
-  const row = await db.prepare('SELECT * FROM candidates ORDER BY id DESC LIMIT 1').first();
+  const row = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   return mapRowToCandidate(row);
 }
 
@@ -221,13 +223,15 @@ export async function handlePreRegisterPublic(db, dto) {
     throw conflict('该手机号已报名，请勿重复提交');
   }
 
+  const id = generateUUID();
   const now = new Date().toISOString();
   await db
     .prepare(
-      `INSERT INTO candidates (name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
+      `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
     )
     .bind(
+      id,
       name,
       dto.gender.trim(),
       className,
@@ -240,7 +244,7 @@ export async function handlePreRegisterPublic(db, dto) {
     )
     .run();
 
-  const row = await db.prepare('SELECT * FROM candidates ORDER BY id DESC LIMIT 1').first();
+  const row = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   return mapRowToCandidate(row);
 }
 
@@ -520,13 +524,15 @@ export async function handleBatchImport(db, body) {
         }
       }
 
+      const id = generateUUID();
       const now = new Date().toISOString();
       await db
         .prepare(
-          `INSERT INTO candidates (name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
+          `INSERT INTO candidates (id, name, gender, class_name, phone, first_department, second_department, accept_adjust, status, _created_at, _updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pre_registered', ?, ?)`,
         )
         .bind(
+          id,
           item.name.trim(),
           item.gender?.trim() || null,
           item.className?.trim() || null,
@@ -874,11 +880,12 @@ export async function handleSubmitScore(db, id, body) {
       .bind(scoreNum, judgeComment || null, now, existingScore.id)
       .run();
   } else {
+    const scoreId = generateUUID();
     await db
       .prepare(
-        'INSERT INTO interviewer_scores (candidate_id, interviewer_name, group_name, score, judge_comment, _created_at, _updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO interviewer_scores (id, candidate_id, interviewer_name, group_name, score, judge_comment, _created_at, _updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       )
-      .bind(id, interviewerName, candidateGroup, scoreNum, judgeComment || null, now, now)
+      .bind(scoreId, id, interviewerName, candidateGroup, scoreNum, judgeComment || null, now, now)
       .run();
   }
 

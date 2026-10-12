@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Chakra+Petch:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 @import '@lark-apaas/client-toolkit/lib/index.css';
+
+/* 隐藏右下角妙搭生成水印 */
+[data-custom-element="miaoda-watermark"],
+[data-custom-element="miaoda-watermark-mobile"],
+[data-custom-element="doubao-watermark"],
+[data-custom-element="doubao-watermark-mobile"] {
+  display: none !important;
+}
 @import "tw-animate-css";
 @import "./tailwind-theme.css";
 @import "./typography.css";

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
   Filter,
@@ -9,7 +9,9 @@ import {
   Trophy,
   BarChart3,
   Eye,
+  Upload,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 const logger = { warn: console.warn, error: console.error, info: console.log, debug: console.log };
 const resolveAppUrl = (path: string): string => (path.startsWith('http') ? path : path);
 import { toast } from 'sonner';
@@ -20,6 +22,8 @@ import type {
   CandidateStatus,
   ResultsStats,
   InterviewerScore,
+  PreRegisterCreateRequest,
+  BatchImportResponse,
 } from '@shared/api.interface';
 import { Button } from '@client/src/components/ui/button';
 import { Input } from '@client/src/components/ui/input';
@@ -42,6 +46,7 @@ import { Badge } from '@client/src/components/ui/badge';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@client/src/components/ui/dialog';
@@ -133,6 +138,12 @@ const ResultsPage: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [detailCandidate, setDetailCandidate] = useState<Candidate | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<PreRegisterCreateRequest[]>([]);
+  const [importSubmitting, setImportSubmitting] = useState(false);
+  const [importResult, setImportResult] = useState<BatchImportResponse | null>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(total / PAGE_SIZE)),
@@ -208,6 +219,220 @@ const ResultsPage: React.FC = () => {
     setAppliedFilter(DEFAULT_FILTER);
   };
 
+  const parseCsvRow = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const parseRowsToItems = (
+    rows: Record<string, string>[],
+  ): PreRegisterCreateRequest[] => {
+    if (rows.length === 0) return [];
+
+    const headerRow = Object.keys(rows[0]);
+    const headerMap = new Map<string, number>();
+    headerRow.forEach((h: string, idx: number) => {
+      headerMap.set(h.trim(), idx);
+    });
+
+    const findIdx = (names: string[]): number => {
+      for (const name of names) {
+        if (headerMap.has(name)) return headerMap.get(name)!;
+      }
+      return -1;
+    };
+
+    const nameIdx = findIdx(['姓名', 'name', 'Name']);
+    const genderIdx = findIdx(['性别', 'gender', 'Gender']);
+    const classIdx = findIdx(['班级', 'className', '班级名称']);
+    const phoneIdx = findIdx([
+      '请输入手机号',
+      '联系电话',
+      '电话',
+      '手机',
+      'phone',
+      'Phone',
+      '手机号',
+    ]);
+    const firstDeptIdx = findIdx([
+      '第一意向部门',
+      '意向部门',
+      'firstDepartment',
+      '第一志愿',
+    ]);
+    const secondDeptIdx = findIdx([
+      '第二意向部门',
+      'secondDepartment',
+      '第二志愿',
+    ]);
+    const acceptAdjustIdx = findIdx([
+      '是否服从调剂',
+      '服从调剂',
+      'acceptAdjust',
+      '调剂',
+    ]);
+
+    const items: PreRegisterCreateRequest[] = [];
+    for (const row of rows) {
+      const cells = headerRow.map((h) => String(row[h] ?? ''));
+      const name = nameIdx >= 0 ? cells[nameIdx]?.trim() : '';
+      if (!name) continue;
+
+      const item: PreRegisterCreateRequest = { name };
+      if (genderIdx >= 0 && cells[genderIdx])
+        item.gender = cells[genderIdx].trim();
+      if (classIdx >= 0 && cells[classIdx])
+        item.className = cells[classIdx].trim();
+      if (phoneIdx >= 0 && cells[phoneIdx])
+        item.phone = cells[phoneIdx].trim();
+      if (firstDeptIdx >= 0 && cells[firstDeptIdx])
+        item.firstDepartment = cells[firstDeptIdx].trim();
+      if (secondDeptIdx >= 0 && cells[secondDeptIdx])
+        item.secondDepartment = cells[secondDeptIdx].trim();
+      if (acceptAdjustIdx >= 0 && cells[acceptAdjustIdx]) {
+        const val = cells[acceptAdjustIdx].trim();
+        item.acceptAdjust = val === '是' ? '是' : '否';
+      }
+
+      items.push(item);
+    }
+    return items;
+  };
+
+  const parseCsvFile = async (
+    file: File,
+  ): Promise<PreRegisterCreateRequest[]> => {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter((l: string) => l.trim() !== '');
+    if (lines.length === 0) {
+      throw new Error('CSV 文件为空');
+    }
+
+    const headerCells = parseCsvRow(lines[0]);
+    const rows: Record<string, string>[] = [];
+    for (let i = 1; i < lines.length; i += 1) {
+      const cells = parseCsvRow(lines[i]);
+      const row: Record<string, string> = {};
+      headerCells.forEach((h, idx) => {
+        row[h.trim()] = cells[idx] ?? '';
+      });
+      rows.push(row);
+    }
+    return parseRowsToItems(rows);
+  };
+
+  const parseXlsxFile = async (
+    file: File,
+  ): Promise<PreRegisterCreateRequest[]> => {
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws, {
+      defval: '',
+      raw: false,
+    });
+    return parseRowsToItems(rows);
+  };
+
+  const handleImportFileSelected = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFile(file);
+    setImportResult(null);
+
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      let items: PreRegisterCreateRequest[] = [];
+
+      if (ext === 'csv') {
+        items = await parseCsvFile(file);
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        items = await parseXlsxFile(file);
+      } else {
+        toast.error('不支持的文件格式，请上传 .csv 或 .xlsx 文件');
+        return;
+      }
+
+      if (items.length === 0) {
+        toast.error('未解析到有效数据，请检查文件内容');
+        setImportPreview([]);
+        return;
+      }
+
+      setImportPreview(items.slice(0, 3));
+    } catch (error) {
+      logger.error('文件解析失败', error);
+      toast.error('文件解析失败，请检查格式');
+      setImportPreview([]);
+    }
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importFile || importPreview.length === 0) return;
+
+    setImportSubmitting(true);
+    try {
+      const ext = importFile.name.split('.').pop()?.toLowerCase();
+      let items: PreRegisterCreateRequest[] = [];
+
+      if (ext === 'csv') {
+        items = await parseCsvFile(importFile);
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        items = await parseXlsxFile(importFile);
+      }
+
+      if (items.length === 0) {
+        toast.error('未解析到有效数据');
+        return;
+      }
+
+      const result: BatchImportResponse =
+        await candidates.batchImportCandidates(items, 'guido');
+      setImportResult(result);
+      toast.success(`成功导入 ${result.success} 条，失败 ${result.failed} 条`);
+    } catch (error) {
+      logger.error('导入失败', error);
+      toast.error('导入失败，请重试');
+    } finally {
+      setImportSubmitting(false);
+    }
+  };
+
+  const handleImportClose = () => {
+    if (importResult) {
+      setPage(1);
+      fetchList(appliedFilter, 1);
+      fetchStats(appliedFilter);
+    }
+    setImportDialogOpen(false);
+    setImportFile(null);
+    setImportPreview([]);
+    setImportResult(null);
+    if (importFileInputRef.current) importFileInputRef.current.value = '';
+  };
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -256,14 +481,20 @@ const ResultsPage: React.FC = () => {
             全部面试结束后查看、筛选和导出面试结果
           </p>
         </div>
-        <Button
-          onClick={handleExport}
-          disabled={exporting}
-          className="bg-indigo-600 hover:bg-indigo-700"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          {exporting ? '导出中...' : '导出 CSV'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            导入数据
+          </Button>
+          <Button
+            onClick={handleExport}
+            disabled={exporting}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {exporting ? '导出中...' : '导出 CSV'}
+          </Button>
+        </div>
       </div>
 
       {/* Filter area */}
@@ -566,6 +797,174 @@ const ResultsPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={importDialogOpen} onOpenChange={(o) => !o && handleImportClose()}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>导入面试者数据</DialogTitle>
+          </DialogHeader>
+
+          {importResult ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 bg-slate-50 rounded-lg text-center">
+                  <p className="text-sm text-slate-500">总计</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {importResult.total}
+                  </p>
+                </div>
+                <div className="p-4 bg-emerald-50 rounded-lg text-center">
+                  <p className="text-sm text-emerald-600">成功</p>
+                  <p className="text-2xl font-bold text-emerald-700">
+                    {importResult.success}
+                  </p>
+                </div>
+                <div className="p-4 bg-rose-50 rounded-lg text-center">
+                  <p className="text-sm text-rose-600">失败</p>
+                  <p className="text-2xl font-bold text-rose-700">
+                    {importResult.failed}
+                  </p>
+                </div>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-3 space-y-1">
+                  <p className="text-sm font-medium text-slate-700 mb-2">
+                    错误详情：
+                  </p>
+                  {importResult.errors.map((err, idx) => (
+                    <p
+                      key={idx}
+                      className="text-sm text-rose-600 bg-rose-50 px-2 py-1 rounded"
+                    >
+                      {err}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : importFile && importPreview.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {importFile.name}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {(importFile.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => importFileInputRef.current?.click()}
+                >
+                  重新选择
+                </Button>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-700 mb-2">
+                  数据预览（前 3 行）
+                </p>
+                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>姓名</TableHead>
+                        <TableHead>性别</TableHead>
+                        <TableHead>班级</TableHead>
+                        <TableHead>手机号</TableHead>
+                        <TableHead>第一意向</TableHead>
+                        <TableHead>第二意向</TableHead>
+                        <TableHead>服从调剂</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importPreview.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.gender ?? '-'}</TableCell>
+                          <TableCell>{item.className ?? '-'}</TableCell>
+                          <TableCell>{item.phone ?? '-'}</TableCell>
+                          <TableCell>{item.firstDepartment ?? '-'}</TableCell>
+                          <TableCell>{item.secondDepartment ?? '-'}</TableCell>
+                          <TableCell>{item.acceptAdjust ?? '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-col items-center justify-center py-10 border-2 border-dashed border-slate-200 rounded-lg bg-slate-50">
+                <Upload className="w-10 h-10 text-slate-400 mb-3" />
+                <p className="text-sm text-slate-600 mb-4">
+                  点击下方按钮选择文件
+                </p>
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                  onClick={() => importFileInputRef.current?.click()}
+                >
+                  选择文件
+                </Button>
+                <input
+                  ref={importFileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                  onChange={handleImportFileSelected}
+                />
+              </div>
+              <div className="text-sm text-slate-500 space-y-1">
+                <p className="font-medium text-slate-700">格式说明：</p>
+                <p>支持 .csv 和 .xlsx 格式，列名需包含：</p>
+                <p className="pl-4">
+                  班级、姓名、性别、第一意向部门、第二意向部门、请输入手机号、是否服从调剂
+                </p>
+                <p className="pl-4 text-slate-400">
+                  （支持同义列名，如 name、gender、phone 等）
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {importResult ? (
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={handleImportClose}
+              >
+                完成
+              </Button>
+            ) : importFile && importPreview.length > 0 ? (
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => importFileInputRef.current?.click()}
+                  disabled={importSubmitting}
+                >
+                  重新选择
+                </Button>
+                <Button
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                  onClick={handleImportSubmit}
+                  disabled={importSubmitting}
+                >
+                  {importSubmitting ? '导入中...' : '导入'}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleImportClose}
+              >
+                取消
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={detailCandidate !== null} onOpenChange={(o) => !o && setDetailCandidate(null)}>
         <DialogContent className="sm:max-w-lg">

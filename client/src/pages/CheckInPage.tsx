@@ -12,6 +12,7 @@ import {
   Phone,
   AlertCircle,
   X,
+  UserPlus,
 } from 'lucide-react';
 import { debounce } from 'lodash';
 import { toast } from 'sonner';
@@ -122,6 +123,26 @@ const emptyManualForm: ManualCheckInForm = {
   acceptAdjust: '否',
 };
 
+interface ManualAddForm {
+  name: string;
+  gender: string;
+  className: string;
+  phone: string;
+  firstDepartment: string;
+  secondDepartment: string;
+  acceptAdjust: string;
+}
+
+const emptyManualAddForm: ManualAddForm = {
+  name: '',
+  gender: '',
+  className: '',
+  phone: '',
+  firstDepartment: '',
+  secondDepartment: '',
+  acceptAdjust: '否',
+};
+
 const DEPARTMENT_OPTIONS = ['技术部', '宣传部', '外联部'];
 
 const CheckInPage = () => {
@@ -167,6 +188,11 @@ const CheckInPage = () => {
   const [manualForm, setManualForm] = useState<ManualCheckInForm>(emptyManualForm);
   const [checkInSubmitting, setCheckInSubmitting] = useState(false);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
+
+  // --- Manual add dialog ---
+  const [manualAddDialogOpen, setManualAddDialogOpen] = useState(false);
+  const [manualAddForm, setManualAddForm] = useState<ManualAddForm>(emptyManualAddForm);
+  const [manualAddSubmitting, setManualAddSubmitting] = useState(false);
 
   // --- Reassign dialog ---
   const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
@@ -530,6 +556,73 @@ const CheckInPage = () => {
     setSelectedCandidate(null);
     setManualForm(emptyManualForm);
     setCheckInMode('search');
+  };
+
+  // --- Manual add ---
+  const handleManualAddSubmit = async () => {
+    if (!manualAddForm.name.trim()) {
+      toast.error('请输入姓名');
+      return;
+    }
+    if (!manualAddForm.gender) {
+      toast.error('请选择性别');
+      return;
+    }
+    if (!manualAddForm.className.trim()) {
+      toast.error('请输入班级');
+      return;
+    }
+    if (!manualAddForm.phone.trim()) {
+      toast.error('请输入手机号');
+      return;
+    }
+    if (!manualAddForm.firstDepartment) {
+      toast.error('请选择第一意向部门');
+      return;
+    }
+    if (!manualAddForm.acceptAdjust) {
+      toast.error('请选择是否服从调剂');
+      return;
+    }
+
+    setManualAddSubmitting(true);
+    try {
+      const secondDept = manualAddForm.secondDepartment || manualAddForm.firstDepartment;
+      const body: PreRegisterCreateRequest = {
+        name: manualAddForm.name.trim(),
+        gender: manualAddForm.gender,
+        className: manualAddForm.className.trim(),
+        phone: manualAddForm.phone.trim(),
+        firstDepartment: manualAddForm.firstDepartment,
+        secondDepartment: secondDept,
+        acceptAdjust: manualAddForm.acceptAdjust,
+      };
+      await candidates.createPreRegister(body);
+      toast.success(`${manualAddForm.name} 添加成功，已进入待分配队列`);
+      setManualAddDialogOpen(false);
+      setManualAddForm(emptyManualAddForm);
+      void loadList();
+      void loadGroupCounts();
+    } catch (error) {
+      logger.error('手动添加失败', error);
+      toast.error('添加失败，请重试');
+    } finally {
+      setManualAddSubmitting(false);
+    }
+  };
+
+  const openManualAddDialog = () => {
+    if (!canOperateFlow) {
+      toast.error('无权限操作，仅管理员和流动人员可执行');
+      return;
+    }
+    setManualAddForm(emptyManualAddForm);
+    setManualAddDialogOpen(true);
+  };
+
+  const closeManualAddDialog = () => {
+    setManualAddDialogOpen(false);
+    setManualAddForm(emptyManualAddForm);
   };
 
   // --- CSV import ---
@@ -925,16 +1018,20 @@ const CheckInPage = () => {
              className="pl-9"
            />
          </div>
-         <div className="hidden md:flex items-center gap-2">
-            <Button variant="outline" onClick={handleImportCsv} disabled={!isAdmin}>
-              <Upload className="h-4 w-4" />
-              导入CSV
+          <div className="hidden md:flex items-center gap-2">
+             <Button variant="default" onClick={openManualAddDialog} disabled={!canOperateFlow}>
+               <UserPlus className="h-4 w-4" />
+               手动添加
+             </Button>
+             <Button variant="outline" onClick={handleImportCsv} disabled={!isAdmin}>
+               <Upload className="h-4 w-4" />
+               导入CSV
+             </Button>
+             <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4" />
+              手动刷新
             </Button>
-            <Button variant="outline" onClick={handleRefresh}>
-             <RefreshCw className="h-4 w-4" />
-             手动刷新
-           </Button>
-         </div>
+          </div>
          <div className="flex md:hidden items-center gap-2">
            <Button variant="outline" onClick={handleRefresh} size="sm">
              <RefreshCw className="h-4 w-4" />
@@ -1586,6 +1683,185 @@ const CheckInPage = () => {
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: 手动添加面试者 */}
+      <Dialog
+        open={manualAddDialogOpen}
+        onOpenChange={setManualAddDialogOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>手动添加面试者</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-add-name">
+                  姓名 <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  id="manual-add-name"
+                  value={manualAddForm.name}
+                  onChange={(e) =>
+                    setManualAddForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  placeholder="请输入姓名"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="manual-add-gender">
+                    性别 <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select
+                    value={manualAddForm.gender}
+                    onValueChange={(value) =>
+                      setManualAddForm((prev) => ({
+                        ...prev,
+                        gender: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="manual-add-gender">
+                      <SelectValue placeholder="请选择" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="男">男</SelectItem>
+                      <SelectItem value="女">女</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="manual-add-class">
+                    班级 <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    id="manual-add-class"
+                    value={manualAddForm.className}
+                    onChange={(e) =>
+                      setManualAddForm((prev) => ({
+                        ...prev,
+                        className: e.target.value,
+                      }))
+                    }
+                    placeholder="请输入班级"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-add-phone">
+                  手机号 <span className="text-rose-500">*</span>
+                </Label>
+                <Input
+                  id="manual-add-phone"
+                  value={manualAddForm.phone}
+                  onChange={(e) =>
+                    setManualAddForm((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
+                  placeholder="请输入手机号"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-add-first-dept">
+                  第一意向部门 <span className="text-rose-500">*</span>
+                </Label>
+                <Select
+                  value={manualAddForm.firstDepartment}
+                  onValueChange={(value) =>
+                    setManualAddForm((prev) => ({
+                      ...prev,
+                      firstDepartment: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="manual-add-first-dept">
+                    <SelectValue placeholder="请选择第一意向部门" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENT_OPTIONS.map((dept: string) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-add-second-dept">
+                  第二意向部门
+                </Label>
+                <Select
+                  value={manualAddForm.secondDepartment}
+                  onValueChange={(value) =>
+                    setManualAddForm((prev) => ({
+                      ...prev,
+                      secondDepartment: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="manual-add-second-dept">
+                    <SelectValue placeholder="同第一意向" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENT_OPTIONS.map((dept: string) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-add-adjust">
+                  是否服从调剂 <span className="text-rose-500">*</span>
+                </Label>
+                <Select
+                  value={manualAddForm.acceptAdjust}
+                  onValueChange={(value) =>
+                    setManualAddForm((prev) => ({
+                      ...prev,
+                      acceptAdjust: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="manual-add-adjust">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="是">是</SelectItem>
+                    <SelectItem value="否">否</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeManualAddDialog}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleManualAddSubmit}
+              disabled={manualAddSubmitting}
+            >
+              {manualAddSubmitting ? '添加中...' : '确认添加'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

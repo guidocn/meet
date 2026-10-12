@@ -178,18 +178,20 @@ export class CandidatesService {
       throw new BadRequestException('姓名为必填项');
     }
 
+    const insertData: Omit<typeof candidates.$inferInsert, 'id'> = {
+      name: dto.name.trim(),
+      gender: dto.gender?.trim() || null,
+      className: dto.className?.trim() || null,
+      phone: dto.phone?.trim() || null,
+      firstDepartment: dto.firstDepartment?.trim() || null,
+      secondDepartment: dto.secondDepartment?.trim() || null,
+      acceptAdjust: dto.acceptAdjust?.trim() || '否',
+      status: 'pre_registered',
+    };
+
     const [row] = await this.db
       .insert(candidates)
-      .values({
-        name: dto.name.trim(),
-        gender: dto.gender?.trim() || null,
-        className: dto.className?.trim() || null,
-        phone: dto.phone?.trim() || null,
-        firstDepartment: dto.firstDepartment?.trim() || null,
-        secondDepartment: dto.secondDepartment?.trim() || null,
-        acceptAdjust: dto.acceptAdjust?.trim() || '否',
-        status: 'pre_registered',
-      })
+      .values(insertData)
       .returning();
 
     this.logger.log(`预报名成功: ${row.id} - ${row.name}`);
@@ -219,18 +221,20 @@ export class CandidatesService {
       throw new ConflictException('该手机号已报名，请勿重复提交');
     }
 
+    const insertData: Omit<typeof candidates.$inferInsert, 'id'> = {
+      name,
+      gender: dto.gender.trim(),
+      className,
+      phone,
+      firstDepartment: dto.firstDepartment.trim(),
+      secondDepartment: dto.secondDepartment?.trim() || dto.firstDepartment.trim(),
+      acceptAdjust: dto.acceptAdjust.trim(),
+      status: 'pre_registered',
+    };
+
     const [row] = await this.db
       .insert(candidates)
-      .values({
-        name,
-        gender: dto.gender.trim(),
-        className,
-        phone,
-        firstDepartment: dto.firstDepartment.trim(),
-        secondDepartment: dto.secondDepartment?.trim() || dto.firstDepartment.trim(),
-        acceptAdjust: dto.acceptAdjust.trim(),
-        status: 'pre_registered',
-      })
+      .values(insertData)
       .returning();
 
     this.logger.log(`公开预报名成功: ${row.id} - ${row.name}`);
@@ -685,7 +689,7 @@ export class CandidatesService {
             }
           }
 
-          await tx.insert(candidates).values({
+          const insertData: Omit<typeof candidates.$inferInsert, 'id'> = {
             name: item.name.trim(),
             gender: item.gender?.trim() || null,
             className: item.className?.trim() || null,
@@ -694,7 +698,8 @@ export class CandidatesService {
             secondDepartment: item.secondDepartment?.trim() || null,
             acceptAdjust: item.acceptAdjust?.trim() || '否',
             status: 'pre_registered',
-          });
+          };
+          await tx.insert(candidates).values(insertData);
 
           success += 1;
         } catch (err) {
