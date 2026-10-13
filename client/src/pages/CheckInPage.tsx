@@ -69,7 +69,7 @@ import {
 
 const PAGE_SIZE = 20;
 const GROUP_OPTIONS: GroupName[] = ['A', 'B', 'C', 'D'];
-const REFRESH_INTERVAL = 5000;
+const REFRESH_INTERVAL = 15000; // 15秒刷新一次，减少D1读取量
 
 // 分组按钮颜色映射，方便快速区分不同组
 const GROUP_COLORS: Record<GroupName, { bg: string; hover: string; border: string; text: string }> = {
@@ -343,12 +343,39 @@ const CheckInPage = () => {
    }, [loadGroupCounts]);
 
      useEffect(() => {
-      const intervalId = setInterval(() => {
-        // 定时静默刷新，只更新数据，不显示loading，保持页面状态和滚动位置
-        void loadList(true);
-        void loadGroupCounts();
-      }, REFRESH_INTERVAL);
-      return () => clearInterval(intervalId);
+      let intervalId: ReturnType<typeof setInterval> | null = null;
+
+      const startPolling = () => {
+        if (intervalId) return;
+        intervalId = setInterval(() => {
+          // 定时静默刷新，只更新数据，不显示loading，保持页面状态和滚动位置
+          void loadList(true);
+          void loadGroupCounts();
+        }, REFRESH_INTERVAL);
+      };
+
+      const stopPolling = () => {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      };
+
+      // 页面可见时才轮询，隐藏时暂停，减少D1读取
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          startPolling();
+        } else {
+          stopPolling();
+        }
+      };
+
+      startPolling();
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        stopPolling();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }, [loadList, loadGroupCounts]);
 
   // --- Handlers ---

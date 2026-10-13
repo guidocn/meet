@@ -44,7 +44,7 @@ import { ScrollArea } from '@client/src/components/ui/scroll-area';
   } from 'lucide-react';
 
 const SESSION_KEY = 'admin_session';
-const REFRESH_INTERVAL = 5000;
+const REFRESH_INTERVAL = 15000; // 15秒刷新一次，减少D1读取量
 const ADMIN_NAME = 'guido';
 const FLOATING_STAFF: string[] = [
   '梁文燕',
@@ -219,10 +219,37 @@ const InterviewPage: React.FC = () => {
   // 自动刷新（静默刷新，不显示loading，保持页面状态）
   useEffect(() => {
     if (!session) return;
-    const intervalId = setInterval(() => {
-      void fetchQueue(currentGroup, true);
-    }, REFRESH_INTERVAL);
-    return () => clearInterval(intervalId);
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const startPolling = () => {
+      if (intervalId) return;
+      intervalId = setInterval(() => {
+        void fetchQueue(currentGroup, true);
+      }, REFRESH_INTERVAL);
+    };
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    // 页面可见时才轮询，隐藏时暂停，减少D1读取
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [session, fetchQueue, currentGroup]);
 
   const handleGroupChange = (group: GroupName) => {

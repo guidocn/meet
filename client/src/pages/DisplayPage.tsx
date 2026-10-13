@@ -389,7 +389,7 @@ const DisplayPage = () => {
       if (interval) return;
       interval = setInterval(() => {
         void fetchData();
-      }, 3000);
+      }, 8000); // 8秒刷新一次，减少D1读取量
     };
 
     const stopPolling = () => {

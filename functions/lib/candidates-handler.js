@@ -1,6 +1,16 @@
 // 面试叫号系统 - 业务逻辑层
 // Cloudflare D1 兼容版本
 
+// 内存缓存：减少D1读取次数（候场大屏和组统计共用）
+let _screenCache = { data: null, timestamp: 0 };
+const SCREEN_CACHE_TTL = 5000; // 5秒缓存
+
+// 清除缓存（数据变更时调用）
+function clearScreenCache() {
+  _screenCache.data = null;
+  _screenCache.timestamp = 0;
+}
+
 const INTERVIEWERS = [
   { name: '钱金怡', groupName: 'A' },
   { name: '陈乙健', groupName: 'A' },
@@ -294,6 +304,7 @@ export async function handleCheckInPublic(db, dto) {
     .bind(dto.candidateId)
     .first();
 
+  clearScreenCache(); // 清除缓存，让候场大屏下次请求读新数据
   return mapRowToCandidate(updated);
 }
 
@@ -493,6 +504,7 @@ export async function handleAssignGroup(db, body) {
   await recalculateGroupNumbers(db, body.groupName);
 
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(body.candidateId).first();
+  clearScreenCache(); // 清除缓存
   return mapRowToCandidate(updated);
 }
 
@@ -704,6 +716,12 @@ export async function handleExportCsv(db, query) {
 }
 
 export async function handleGetBigScreen(db) {
+  // 先查缓存，5秒内的请求直接返回，大幅减少D1读取
+  const now = Date.now();
+  if (_screenCache.data && (now - _screenCache.timestamp) < SCREEN_CACHE_TTL) {
+    return _screenCache.data.bigScreen;
+  }
+
   const groupNames = ['A', 'B', 'C', 'D'];
   const groups = [];
 
@@ -757,15 +775,32 @@ export async function handleGetBigScreen(db) {
   totalCompleted = allRows.filter((row) => row.status === 'completed').length;
   totalSignedIn = allRows.filter((row) => row.status !== 'pre_registered').length;
 
-  return { groups, totalSignedIn, totalInterviewing, totalWaiting, totalCompleted };
+  const result = { groups, totalSignedIn, totalInterviewing, totalWaiting, totalCompleted };
+  
+  // 写入缓存
+  _screenCache.data = { bigScreen: result, allRows };
+  _screenCache.timestamp = now;
+  
+  return result;
 }
 
 export async function handleGetGroupCounts(db) {
-  const groupNames = ['A', 'B', 'C', 'D'];
-  const allResult = await db.prepare('SELECT * FROM candidates').all();
-  const allRows = allResult.results || [];
+  // 先查缓存
+  const now = Date.now();
+  if (_screenCache.data && (now - _screenCache.timestamp) < SCREEN_CACHE_TTL) {
+    return _screenCache.data.groupCounts;
+  }
 
-  return groupNames.map((gName) => {
+  // 如果缓存里已经有allRows，直接复用，不再查数据库
+  let allRows;
+  if (_screenCache.data && _screenCache.data.allRows && (Date.now() - _screenCache.timestamp) < SCREEN_CACHE_TTL) {
+    allRows = _screenCache.data.allRows;
+  } else {
+    const allResult = await db.prepare('SELECT * FROM candidates').all();
+    allRows = allResult.results || [];
+  }
+
+  const result = groupNames.map((gName) => {
     const groupRows = allRows.filter((row) => row.group_name === gName);
     const waitingRows = groupRows
       .filter((row) => row.status === 'waiting')
@@ -789,6 +824,13 @@ export async function handleGetGroupCounts(db) {
         : null,
     };
   });
+
+  // 写入缓存
+  if (_screenCache.data) {
+    _screenCache.data.groupCounts = result;
+  }
+
+  return result;
 }
 
 export async function handleInterviewerLogin(db, body) {
@@ -884,6 +926,7 @@ export async function handleUpdateStatus(db, id, body) {
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   const scores = await getScoresByCandidateIds(db, [id]);
   const scoreMap = groupScoresById(scores);
+  clearScreenCache(); // 清除缓存
   return mapRowToCandidate(updated, scoreMap.get(id) || []);
 }
 
@@ -979,6 +1022,7 @@ export async function handleApprove(db, id, body) {
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   const scores = await getScoresByCandidateIds(db, [id]);
   const scoreMap = groupScoresById(scores);
+  clearScreenCache(); // 清除缓存
   return mapRowToCandidate(updated, scoreMap.get(id) || []);
 }
 
@@ -996,6 +1040,7 @@ export async function handleDeleteCandidate(db, id) {
     await recalculateGroupNumbers(db, existing.group_name);
   }
 
+  clearScreenCache(); // 清除缓存
   return { success: true, deletedId: id, name: existing.name };
 }
 
@@ -1013,5 +1058,6 @@ export async function handleDeleteAll(db, body) {
   await db.prepare('DELETE FROM interviewer_scores').run();
   await db.prepare('DELETE FROM candidates').run();
 
+  clearScreenCache(); // 清除缓存
   return { success: true, deletedCount: count };
 }
