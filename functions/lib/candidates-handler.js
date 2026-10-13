@@ -876,6 +876,11 @@ export async function handleUpdateStatus(db, id, body) {
   const now = new Date().toISOString();
   await db.prepare('UPDATE candidates SET status = ?, _updated_at = ? WHERE id = ?').bind(newStatus, now, id).run();
 
+  // 状态变更后，重新计算该组的组内序号，确保按全场序号连续不跳号
+  if (existing.group_name) {
+    await recalculateGroupNumbers(db, existing.group_name);
+  }
+
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   const scores = await getScoresByCandidateIds(db, [id]);
   const scoreMap = groupScoresById(scores);
@@ -966,6 +971,11 @@ export async function handleApprove(db, id, body) {
   const now = new Date().toISOString();
   await db.prepare("UPDATE candidates SET status = 'completed', _updated_at = ? WHERE id = ?").bind(now, id).run();
 
+  // 审批通过后，重新计算该组的组内序号
+  if (existing.group_name) {
+    await recalculateGroupNumbers(db, existing.group_name);
+  }
+
   const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
   const scores = await getScoresByCandidateIds(db, [id]);
   const scoreMap = groupScoresById(scores);
@@ -980,6 +990,11 @@ export async function handleDeleteCandidate(db, id) {
   // 同时删除打分记录
   await db.prepare('DELETE FROM interviewer_scores WHERE candidate_id = ?').bind(id).run();
   await db.prepare('DELETE FROM candidates WHERE id = ?').bind(id).run();
+
+  // 删除后重新计算该组的组内序号
+  if (existing.group_name) {
+    await recalculateGroupNumbers(db, existing.group_name);
+  }
 
   return { success: true, deletedId: id, name: existing.name };
 }
