@@ -453,17 +453,17 @@ export async function handleCheckIn(db, body) {
 
 // 重新计算指定组所有待面试人员的组内序号，严格按全场序号升序（先来先面）
 async function recalculateGroupNumbers(db, groupName) {
-  // 组内序号按全场序号排序，包括所有流程中的人（待面试/面试中/待审批）
-  // 已完成和缺考的人不参与组内序号分配
+  // 组内序号按全场序号排序，包括本组所有已分配的人（不管状态）
+  // 这样已完成的和待面试的组内序号是连续衔接的，不会重复跳号
   const result = await db
-    .prepare("SELECT id FROM candidates WHERE group_name = ? AND status IN ('waiting', 'interviewing', 'pending_approval') ORDER BY global_number ASC, _created_at ASC")
+    .prepare("SELECT id FROM candidates WHERE group_name = ? ORDER BY global_number ASC, _created_at ASC")
     .bind(groupName)
     .all();
-  const waitingList = result.results || [];
-  for (let i = 0; i < waitingList.length; i++) {
+  const allList = result.results || [];
+  for (let i = 0; i < allList.length; i++) {
     await db
       .prepare('UPDATE candidates SET group_number = ? WHERE id = ?')
-      .bind(i + 1, waitingList[i].id)
+      .bind(i + 1, allList[i].id)
       .run();
   }
 }
