@@ -22,6 +22,8 @@ import {
   handleUpdateStatus,
   handleSubmitScore,
   handleApprove,
+  handleDeleteCandidate,
+  handleDeleteAll,
 } from '../../lib/candidates-handler';
 
 export async function onRequest(context) {
@@ -129,6 +131,18 @@ export async function onRequest(context) {
       const id = path.replace('/approve', '').replace('/', '');
       const body = await request.json();
       return jsonResponse(await handleApprove(db, id, body));
+    }
+
+    // 单个删除（不需要密码）
+    if (method === 'DELETE' && !path.includes('/') && path !== '') {
+      const id = path.replace('/', '');
+      return jsonResponse(await handleDeleteCandidate(db, id));
+    }
+
+    // 全部删除（需要密码 6019）
+    if (method === 'POST' && path === '/delete-all') {
+      const body = await request.json();
+      return jsonResponse(await handleDeleteAll(db, body));
     }
 
     // 签到

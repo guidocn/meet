@@ -10,6 +10,7 @@ import {
   BarChart3,
   Eye,
   Upload,
+  Trash2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 const logger = { warn: console.warn, error: console.error, info: console.log, debug: console.log };
@@ -143,6 +144,12 @@ const ResultsPage: React.FC = () => {
   const [importPreview, setImportPreview] = useState<PreRegisterCreateRequest[]>([]);
   const [importSubmitting, setImportSubmitting] = useState(false);
   const [importResult, setImportResult] = useState<BatchImportResponse | null>(null);
+  // 删除相关状态
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Candidate | null>(null);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [deleteAllPassword, setDeleteAllPassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const importFileInputRef = useRef<HTMLInputElement>(null);
 
   const totalPages = useMemo(
@@ -469,6 +476,58 @@ const ResultsPage: React.FC = () => {
     }
   };
 
+  // 单个删除（不需要密码）
+  const handleDeleteCandidate = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/candidates/${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || '删除失败');
+      }
+      toast.success(`已删除 ${deleteTarget.name}`);
+      setDeleteConfirmOpen(false);
+      setDeleteTarget(null);
+      void fetchData();
+    } catch (error) {
+      logger.error('删除失败', error);
+      toast.error(error instanceof Error ? error.message : '删除失败');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // 全部删除（需要密码 6019）
+  const handleDeleteAll = async () => {
+    if (deleteAllPassword !== '6019') {
+      toast.error('密码错误');
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/candidates/delete-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deleteAllPassword }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || '删除失败');
+      }
+      const data = await res.json();
+      toast.success(`已全部删除 ${data.deletedCount} 条记录`);
+      setDeleteAllOpen(false);
+      setDeleteAllPassword('');
+      void fetchData();
+    } catch (error) {
+      logger.error('全部删除失败', error);
+      toast.error(error instanceof Error ? error.message : '删除失败');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const rankStart = (page - 1) * PAGE_SIZE;
 
   return (
@@ -482,6 +541,14 @@ const ResultsPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setDeleteAllOpen(true)}
+            className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            全部删除
+          </Button>
           <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
             <Upload className="w-4 h-4 mr-2" />
             导入数据
@@ -656,6 +723,7 @@ const ResultsPage: React.FC = () => {
                       <TableHead className="text-center">打分人数</TableHead>
                       <TableHead className="text-center">打分明细</TableHead>
                       <TableHead className="w-20 text-center">状态</TableHead>
+                      <TableHead className="w-20 text-center">操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -717,6 +785,20 @@ const ResultsPage: React.FC = () => {
                             >
                               {getStatusLabel(candidate.status)}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setDeleteTarget(candidate);
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              aria-label={`删除${candidate.name}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -1025,6 +1107,78 @@ const ResultsPage: React.FC = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 单个删除确认弹窗 */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={(o) => !o && setDeleteConfirmOpen(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">确认删除</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-slate-700">
+              确定要删除面试者 <span className="font-bold text-slate-900">{deleteTarget?.name}</span> 吗？
+            </p>
+            <p className="text-sm text-slate-500 mt-2">
+              删除后该面试者的所有信息和打分记录将被永久清除，无法恢复。
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)} disabled={deleting}>
+              取消
+            </Button>
+            <Button
+              onClick={handleDeleteCandidate}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? '删除中...' : '确认删除'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 全部删除确认弹窗（需要密码） */}
+      <Dialog open={deleteAllOpen} onOpenChange={(o) => !o && setDeleteAllOpen(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">全部删除</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-700 font-medium">危险操作</p>
+              <p className="text-sm text-red-600 mt-1">
+                此操作将删除所有面试者信息和打分记录，无法恢复！
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">请输入删除密码</label>
+              <Input
+                type="password"
+                placeholder="输入密码"
+                value={deleteAllPassword}
+                onChange={(e) => setDeleteAllPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && deleteAllPassword === '6019') {
+                    void handleDeleteAll();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteAllOpen(false)} disabled={deleting}>
+              取消
+            </Button>
+            <Button
+              onClick={handleDeleteAll}
+              disabled={deleting || deleteAllPassword !== '6019'}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting ? '删除中...' : '确认全部删除'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

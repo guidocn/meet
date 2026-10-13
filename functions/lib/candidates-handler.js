@@ -960,3 +960,32 @@ export async function handleApprove(db, id, body) {
   const scoreMap = groupScoresById(scores);
   return mapRowToCandidate(updated, scoreMap.get(id) || []);
 }
+
+// 单个删除面试者（不需要密码）
+export async function handleDeleteCandidate(db, id) {
+  const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(id).first();
+  if (!existing) throw notFound('考生不存在');
+
+  // 同时删除打分记录
+  await db.prepare('DELETE FROM interviewer_scores WHERE candidate_id = ?').bind(id).run();
+  await db.prepare('DELETE FROM candidates WHERE id = ?').bind(id).run();
+
+  return { success: true, deletedId: id, name: existing.name };
+}
+
+// 全部删除面试者（需要密码 6019）
+export async function handleDeleteAll(db, body) {
+  const { password } = body || {};
+  if (!password) throw badRequest('请输入删除密码');
+  if (password !== '6019') throw forbidden('密码错误，无法全部删除');
+
+  // 先统计数量
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM candidates').first();
+  const count = countResult?.count || 0;
+
+  // 删除所有打分记录和面试者
+  await db.prepare('DELETE FROM interviewer_scores').run();
+  await db.prepare('DELETE FROM candidates').run();
+
+  return { success: true, deletedCount: count };
+}
