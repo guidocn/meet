@@ -529,7 +529,7 @@ const DisplayPage = () => {
               <Image
                 src={logoImg}
                 alt="党支部义务电脑维修队"
-                className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl object-cover"
+                className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-2xl object-cover"
               />
             </div>
             <div>
@@ -551,17 +551,13 @@ const DisplayPage = () => {
               >
                 招新面试候场系统
               </p>
+              <p
+                className="text-xs sm:text-sm text-amber-300/90 tracking-wider mt-1 text-center sm:text-left font-medium"
+                style={{ textShadow: '0 0 8px rgba(251,191,36,0.4)' }}
+              >
+                此系统由义务电脑维修队开发
+              </p>
             </div>
-          </div>
-
-          {/* 中间：版权信息 */}
-          <div className="hidden md:flex flex-1 justify-center items-center">
-            <p
-              className="text-sm lg:text-base text-amber-300/90 tracking-wider font-medium"
-              style={{ textShadow: '0 0 12px rgba(251,191,36,0.5)' }}
-            >
-              此系统由义务电脑维修队开发
-            </p>
           </div>
 
           <div className="text-center sm:text-right">

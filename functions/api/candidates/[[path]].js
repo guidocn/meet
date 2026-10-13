@@ -133,9 +133,9 @@ export async function onRequest(context) {
       return jsonResponse(await handleApprove(db, id, body));
     }
 
-    // 单个删除（不需要密码）
-    if (method === 'DELETE' && !path.includes('/') && path !== '') {
-      const id = path.replace('/', '');
+    // 单个删除（不需要密码）- 必须在搜索列表之前，且排除已知的二级路径
+    if (method === 'DELETE' && path.startsWith('/') && path.split('/').filter(Boolean).length === 1) {
+      const id = path.replace(/^\//, '');
       return jsonResponse(await handleDeleteCandidate(db, id));
     }
 
