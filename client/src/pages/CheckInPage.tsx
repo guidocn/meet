@@ -1249,8 +1249,15 @@ const CheckInPage = () => {
               className="bg-white border border-slate-200 rounded-lg p-3 space-y-2"
             >
                <div className="flex items-start justify-between gap-2">
-                 <div className="text-lg font-bold text-slate-900">
-                   {item.name}
+                 <div className="flex items-center gap-2">
+                   {item.globalNumber && (
+                     <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded">
+                       #{item.globalNumber}
+                     </span>
+                   )}
+                   <span className="text-lg font-bold text-slate-900">
+                     {item.name}
+                   </span>
                  </div>
                  {renderInterviewStatusBadge(item.status)}
                </div>

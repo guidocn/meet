@@ -763,6 +763,13 @@ const DisplayPage = () => {
             </span>
           </div>
         </div>
+
+        {/* 底部温馨提示 */}
+        <div className="w-full mt-4 sm:mt-6 text-center">
+          <p className="text-sm sm:text-base text-amber-300/90 tracking-wider font-medium" style={{ textShadow: '0 0 10px rgba(251,191,36,0.3)' }}>
+            💡 有问题请现场找黄色马甲或带工作证的师兄师姐
+          </p>
+        </div>
       </footer>
 
       <style>{`
