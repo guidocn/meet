@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LogIn, ArrowLeft } from 'lucide-react';
-import logoImg from '@client/src/assets/logo.png';
+import logoImg from '@client/src/assets/logo.webp';
 import { logger } from '@lark-apaas/client-toolkit/logger';
 
 import { Button } from '@client/src/components/ui/button';

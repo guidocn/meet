@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+﻿import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Particles, { ParticlesProvider } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
@@ -13,7 +13,7 @@ import type {
   BigScreenData,
   BigScreenGroupData,
 } from '@shared/api.interface';
-import logoImg from '@client/src/assets/logo.png';
+import logoImg from '@client/src/assets/logo.webp';
 
 let particlesInitialized = false;
 
@@ -551,6 +551,12 @@ const DisplayPage = () => {
               >
                 招新面试候场系统
               </p>
+              <p
+                className="text-xs sm:text-base text-amber-300/90 tracking-wider mt-1.5 text-center sm:text-left font-medium"
+                style={{ textShadow: '0 0 10px rgba(251,191,36,0.4)' }}
+              >
+                此系统由义务电脑维修队开发
+              </p>
             </div>
           </div>
 
@@ -756,9 +762,6 @@ const DisplayPage = () => {
               微信扫码 · 信息登记
             </span>
           </div>
-        </div>
-        <div className="mt-3 text-center text-xs text-zinc-500">
-          此系统由义务电脑维修队开发
         </div>
       </footer>
 

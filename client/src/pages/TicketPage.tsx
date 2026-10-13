@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Ticket, Clock, CheckCircle2, Hourglass, Award, Loader2, AlertCircle, Monitor, Palette, Handshake, Users, Star, Clock as ClockIcon, Lightbulb, HeartHandshake, Save } from 'lucide-react';
-import logoImg from '@client/src/assets/logo.png';
+import logoImg from '@client/src/assets/logo.webp';
 import { toast } from 'sonner';
 import { logger } from '@lark-apaas/client-toolkit/logger';
 import type { Candidate } from '@shared/api.interface';

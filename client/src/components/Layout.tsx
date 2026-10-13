@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
-import logoImg from '@client/src/assets/logo.png';
+import logoImg from '@client/src/assets/logo.webp';
 
 import { Button } from '@client/src/components/ui/button';
 import { readSession, type AdminSession } from './ProtectedRoute';

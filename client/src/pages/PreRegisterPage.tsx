@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   UserPlus,
@@ -14,7 +14,7 @@ import {
   Palette,
   Handshake,
 } from 'lucide-react';
-import logoImg from '@client/src/assets/logo.png';
+import logoImg from '@client/src/assets/logo.webp';
 import { toast } from 'sonner';
 import { logger } from '@lark-apaas/client-toolkit/logger';
 import type { Candidate } from '@shared/api.interface';
