@@ -489,7 +489,8 @@ const ResultsPage: React.FC = () => {
       toast.success(`已删除 ${deleteTarget.name}`);
       setDeleteConfirmOpen(false);
       setDeleteTarget(null);
-      void fetchData();
+      void fetchList(appliedFilter, page);
+      void fetchStats(appliedFilter);
     } catch (error) {
       logger.error('删除失败', error);
       toast.error(error instanceof Error ? error.message : '删除失败');
@@ -519,7 +520,9 @@ const ResultsPage: React.FC = () => {
       toast.success(`已全部删除 ${data.deletedCount} 条记录`);
       setDeleteAllOpen(false);
       setDeleteAllPassword('');
-      void fetchData();
+      setPage(1);
+      void fetchList(appliedFilter, 1);
+      void fetchStats(appliedFilter);
     } catch (error) {
       logger.error('全部删除失败', error);
       toast.error(error instanceof Error ? error.message : '删除失败');
