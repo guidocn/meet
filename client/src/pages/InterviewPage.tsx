@@ -560,8 +560,13 @@ const InterviewPage: React.FC = () => {
                                {candidate.groupNumber ?? '-'}
                              </span>
                              <div>
-                               <div className="font-medium text-slate-900">
+                               <div className="font-medium text-slate-900 flex items-center gap-2">
                                  {candidate.name}
+                                 {candidate.globalNumber && (
+                                   <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-normal">
+                                     全场#{candidate.globalNumber}
+                                   </span>
+                                 )}
                                </div>
                                <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                                  <GraduationCap className="h-3 w-3" />
@@ -645,9 +650,16 @@ const InterviewPage: React.FC = () => {
                       <span className="text-4xl font-black text-indigo-600">
                         {selectedCandidate.groupNumber ?? '-'}
                       </span>
-                      <span className="text-2xl font-bold text-slate-900">
-                        {selectedCandidate.name}
-                      </span>
+                      <div>
+                        <span className="text-2xl font-bold text-slate-900">
+                          {selectedCandidate.name}
+                        </span>
+                        {selectedCandidate.globalNumber && (
+                          <div className="text-xs text-indigo-600 font-medium mt-0.5">
+                            全场序号：#{selectedCandidate.globalNumber}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <Badge
                       variant="outline"
@@ -923,9 +935,16 @@ const InterviewPage: React.FC = () => {
                    </span>
                    <div className="flex-1 min-w-0">
                      <div className="flex items-center justify-between gap-2">
-                       <span className="font-bold text-slate-900 text-base">
-                         {candidate.name}
-                       </span>
+                       <div className="flex items-center gap-2">
+                         <span className="font-bold text-slate-900 text-base">
+                           {candidate.name}
+                         </span>
+                         {candidate.globalNumber && (
+                           <span className="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
+                             全场#{candidate.globalNumber}
+                           </span>
+                         )}
+                       </div>
                        <Badge
                          variant="outline"
                          className={`${STATUS_BADGE_VARIANT[candidate.status]} text-xs whitespace-nowrap`}
