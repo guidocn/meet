@@ -551,13 +551,17 @@ const DisplayPage = () => {
               >
                 招新面试候场系统
               </p>
-              <p
-                className="text-xs sm:text-base text-amber-300/90 tracking-wider mt-1.5 text-center sm:text-left font-medium"
-                style={{ textShadow: '0 0 10px rgba(251,191,36,0.4)' }}
-              >
-                此系统由义务电脑维修队开发
-              </p>
             </div>
+          </div>
+
+          {/* 中间：版权信息 */}
+          <div className="hidden md:flex flex-1 justify-center items-center">
+            <p
+              className="text-sm lg:text-base text-amber-300/90 tracking-wider font-medium"
+              style={{ textShadow: '0 0 12px rgba(251,191,36,0.5)' }}
+            >
+              此系统由义务电脑维修队开发
+            </p>
           </div>
 
           <div className="text-center sm:text-right">
