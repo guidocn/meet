@@ -849,6 +849,17 @@ export async function handleUpdateStatus(db, id, body) {
     throw badRequest(`不允许从 ${existing.status} 流转到 ${newStatus}`);
   }
 
+  // 开始面试时校验：同一组同时只能有一个人在面试中或待审批
+  if (newStatus === 'interviewing' && existing.group_name) {
+    const activeResult = await db
+      .prepare("SELECT COUNT(*) as cnt FROM candidates WHERE group_name = ? AND status IN ('interviewing', 'pending_approval')")
+      .bind(existing.group_name)
+      .first();
+    if (activeResult.cnt > 0) {
+      throw badRequest('本组已有面试者正在面试或待审批，请等审批完成后再叫下一位');
+    }
+  }
+
   if (newStatus === 'pending_approval') {
     const scoresResult = await db
       .prepare('SELECT COUNT(*) as cnt FROM interviewer_scores WHERE candidate_id = ?')
