@@ -549,7 +549,7 @@ const DisplayPage = () => {
                 className="text-xs sm:text-sm text-cyan-400 tracking-widest mt-0.5 text-center sm:text-left"
                 style={{ fontFamily: NUM_FONT, fontWeight: 500 }}
               >
-                招新面试候场系统
+                {data?.mode === 'second' ? '二面候场系统' : '招新面试候场系统'}
               </p>
               <p
                 className="text-xs sm:text-sm text-amber-300/90 tracking-wider mt-1 text-center sm:text-left font-medium"
