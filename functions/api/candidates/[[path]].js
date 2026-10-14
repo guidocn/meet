@@ -33,6 +33,8 @@ import {
   handleSecondRoundStats,
   handleGetBackupStatus,
   handleToggleBackup,
+  handleGetDisplayMode,
+  handleToggleDisplayMode,
 } from '../../lib/candidates-handler';
 
 export async function onRequest(context) {
@@ -209,6 +211,17 @@ export async function onRequest(context) {
     // 切换备用二面官开关
     if (method === 'POST' && path === '/second/toggle-backup') {
       return jsonResponse(await handleToggleBackup(db, await request.json()));
+    }
+
+    // 获取候场大屏显示模式
+    if (method === 'GET' && path === '/display/mode') {
+      const operatorName = url.searchParams.get('operatorName') || '';
+      return jsonResponse(await handleGetDisplayMode(db, operatorName));
+    }
+
+    // 切换候场大屏显示模式
+    if (method === 'POST' && path === '/display/toggle-mode') {
+      return jsonResponse(await handleToggleDisplayMode(db, await request.json()));
     }
 
     // 搜索列表（兜底放最后，避免匹配到更具体的路径）

@@ -33,6 +33,9 @@ const SECOND_ROUND_GROUP_F = ['二面F1', '二面F2', '二面F3', '二面F4', '�
 // 备用二面F组开关（存在内存里，重启后恢复默认关闭）
 let _backupFEnabled = false;
 
+// 候场大屏模式：'first'=一面ABCD组，'second'=二面EF组
+let _displayMode = 'first';
+
 // 获取所有二面面试官（根据开关决定是否包含F组）
 function getAllSecondRoundInterviewers() {
   return _backupFEnabled 
@@ -754,7 +757,9 @@ export async function handleGetBigScreen(db) {
     return _screenCache.data.bigScreen;
   }
 
-  const groupNames = ['A', 'B', 'C', 'D'];
+  // 根据模式决定显示哪些组和状态
+  const isSecondMode = _displayMode === 'second';
+  const groupNames = isSecondMode ? ['E', 'F'] : ['A', 'B', 'C', 'D'];
   const groups = [];
 
   const allResult = await db.prepare('SELECT * FROM candidates').all();
@@ -768,17 +773,19 @@ export async function handleGetBigScreen(db) {
   for (const gName of groupNames) {
     const groupRows = allRows.filter((row) => row.group_name === gName);
 
-    const interviewingRows = groupRows
-      .filter((row) => row.status === 'interviewing' || row.status === 'pending_approval')
-      .sort((a, b) => {
-        const orderA = a.status === 'pending_approval' ? 0 : 1;
-        const orderB = b.status === 'pending_approval' ? 0 : 1;
-        if (orderA !== orderB) return orderA - orderB;
-        return (a.group_number ?? Number.MAX_SAFE_INTEGER) - (b.group_number ?? Number.MAX_SAFE_INTEGER);
-      });
+    const interviewingRows = isSecondMode
+      ? groupRows.filter((row) => row.status === 'second_interviewing')
+      : groupRows.filter((row) => row.status === 'interviewing' || row.status === 'pending_approval')
+        .sort((a, b) => {
+          const orderA = a.status === 'pending_approval' ? 0 : 1;
+          const orderB = b.status === 'pending_approval' ? 0 : 1;
+          if (orderA !== orderB) return orderA - orderB;
+          return (a.group_number ?? Number.MAX_SAFE_INTEGER) - (b.group_number ?? Number.MAX_SAFE_INTEGER);
+        });
 
-    const waitingRows = groupRows
-      .filter((row) => row.status === 'waiting')
+    const waitingRows = isSecondMode
+      ? groupRows.filter((row) => row.status === 'second_waiting')
+      : groupRows.filter((row) => row.status === 'waiting');
       .sort((a, b) => (a.group_number ?? Number.MAX_SAFE_INTEGER) - (b.group_number ?? Number.MAX_SAFE_INTEGER));
 
     const completedCount = groupRows.filter((row) => row.status === 'completed').length;
@@ -804,10 +811,22 @@ export async function handleGetBigScreen(db) {
     totalWaiting += waitingRows.length;
   }
 
-  totalCompleted = allRows.filter((row) => row.status === 'completed').length;
-  totalSignedIn = allRows.filter((row) => row.status !== 'pre_registered').length;
+  if (isSecondMode) {
+    totalCompleted = allRows.filter((row) => row.status === 'final_admitted' || row.status === 'final_rejected').length;
+    totalSignedIn = allRows.filter((row) => row.status === 'second_waiting' || row.status === 'second_interviewing' || row.status === 'final_admitted' || row.status === 'final_rejected').length;
+  } else {
+    totalCompleted = allRows.filter((row) => row.status === 'completed').length;
+    totalSignedIn = allRows.filter((row) => row.status !== 'pre_registered').length;
+  }
 
-  const result = { groups, totalSignedIn, totalInterviewing, totalWaiting, totalCompleted };
+  const result = { 
+    groups, 
+    totalSignedIn, 
+    totalInterviewing, 
+    totalWaiting, 
+    totalCompleted,
+    mode: _displayMode,
+  };
   
   // 写入缓存
   _screenCache.data = { bigScreen: result, allRows };
@@ -1291,5 +1310,30 @@ export async function handleToggleBackup(db, body) {
     success: true,
     backupFEnabled: _backupFEnabled,
     message: enabled ? '二面F组备用面试官已启用' : '二面F组备用面试官已关闭',
+  };
+}
+
+// 获取候场大屏显示模式（仅管理员）
+export async function handleGetDisplayMode(db, operatorName) {
+  if (operatorName !== ADMIN_NAME) throw forbidden('仅管理员可查看');
+  return {
+    mode: _displayMode,
+    message: _displayMode === 'first' ? '当前显示一面（ABCD组）' : '当前显示二面（EF组）',
+  };
+}
+
+// 切换候场大屏显示模式（仅管理员）
+export async function handleToggleDisplayMode(db, body) {
+  const { operatorName, mode } = body;
+  if (operatorName !== ADMIN_NAME) throw forbidden('仅管理员可操作');
+  if (!['first', 'second'].includes(mode)) throw badRequest('模式参数错误');
+  
+  _displayMode = mode;
+  clearScreenCache(); // 切换模式后清除缓存，立即生效
+  
+  return {
+    success: true,
+    mode: _displayMode,
+    message: mode === 'first' ? '已切换到一面模式（ABCD组）' : '已切换到二面模式（EF组）',
   };
 }
