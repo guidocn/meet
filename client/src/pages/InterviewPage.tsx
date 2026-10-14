@@ -44,7 +44,7 @@ import { ScrollArea } from '@client/src/components/ui/scroll-area';
   } from 'lucide-react';
 
 const SESSION_KEY = 'admin_session';
-const REFRESH_INTERVAL = 15000; // 15秒刷新一次，减少D1读取量
+const REFRESH_INTERVAL = 10000; // 10秒刷新一次，响应更快
 const ADMIN_NAME = 'guido';
 const FLOATING_STAFF: string[] = [
   '梁文燕',
@@ -312,7 +312,7 @@ const InterviewPage: React.FC = () => {
         session.name,
       );
       toast.success(`已开始面试：${selectedCandidate.name}`);
-      void fetchQueue(currentGroup);
+      void fetchQueue(currentGroup, true);
     } catch (error) {
       logger.error('开始面试失败', error);
       toast.error('开始面试失败');
@@ -334,7 +334,7 @@ const InterviewPage: React.FC = () => {
         session.name,
       );
       toast.success(`已提交审批：${selectedCandidate.name}，请等待签到人员审批`);
-      void fetchQueue(currentGroup);
+      void fetchQueue(currentGroup, true);
     } catch (error) {
       logger.error('提交审批失败', error);
       toast.error('提交审批失败');
@@ -361,7 +361,7 @@ const InterviewPage: React.FC = () => {
       toast.success(
         myScoreRecord ? '打分已更新' : '打分提交成功',
       );
-      void fetchQueue(currentGroup);
+      void fetchQueue(currentGroup, true);
     } catch (error) {
       logger.error('提交打分失败', error);
       toast.error('提交打分失败');
@@ -380,7 +380,7 @@ const InterviewPage: React.FC = () => {
          session.name,
        );
        toast.success('已开始面试');
-       void fetchQueue(currentGroup);
+       void fetchQueue(currentGroup, true);
      } catch (error) {
        logger.error('开始面试失败', error);
        toast.error('开始面试失败');
@@ -405,7 +405,7 @@ const InterviewPage: React.FC = () => {
           session.name,
         );
         toast.success('已提交审批，等待签到人员审批');
-        void fetchQueue(currentGroup);
+        void fetchQueue(currentGroup, true);
       } catch (error) {
         logger.error('提交审批失败', error);
         toast.error('提交审批失败');
@@ -428,7 +428,7 @@ const InterviewPage: React.FC = () => {
          judgeComment || undefined,
        );
        toast.success('打分提交成功');
-       void fetchQueue(currentGroup);
+       void fetchQueue(currentGroup, true);
      } catch (error) {
        logger.error('提交打分失败', error);
        toast.error('提交打分失败');

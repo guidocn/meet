@@ -69,7 +69,7 @@ import {
 
 const PAGE_SIZE = 20;
 const GROUP_OPTIONS: GroupName[] = ['A', 'B', 'C', 'D'];
-const REFRESH_INTERVAL = 15000; // 15秒刷新一次，减少D1读取量
+const REFRESH_INTERVAL = 10000; // 10秒刷新一次，响应更快
 
 // 分组按钮颜色映射，方便快速区分不同组
 const GROUP_COLORS: Record<GroupName, { bg: string; hover: string; border: string; text: string }> = {
@@ -220,7 +220,7 @@ const CheckInPage = () => {
     try {
       await candidates.approveCandidate(candidateId, session?.name ?? '');
       toast.success('已审批通过');
-      void loadList();
+      void loadList(true);
       void loadGroupCounts();
     } catch (error) {
       logger.error('审批失败', error);
@@ -409,7 +409,7 @@ const CheckInPage = () => {
     try {
        await candidates.checkInById(candidateId, session?.name);
        toast.success('签到成功');
-       void loadList();
+       void loadList(true);
        void loadGroupCounts();
     } catch (error) {
       logger.error('签到失败', error);
@@ -425,7 +425,7 @@ const CheckInPage = () => {
     try {
        await candidates.assignGroup(candidateId, groupName, session?.name);
        toast.success(`已分配到 ${groupName} 组`);
-       void loadList();
+       void loadList(true);
        void loadGroupCounts();
     } catch (error) {
       logger.error('分配组别失败', error);
@@ -448,7 +448,7 @@ const CheckInPage = () => {
        toast.success(`已改派到 ${reassignGroup} 组`);
        setReassignDialogOpen(false);
        setReassignCandidate(null);
-       void loadList();
+       void loadList(true);
        void loadGroupCounts();
     } catch (error) {
       logger.error('改派组别失败', error);
@@ -504,7 +504,7 @@ const CheckInPage = () => {
       await candidates.checkInById(selectedCandidate.id, session?.name);
       toast.success(`${selectedCandidate.name} 签到成功`);
       closeCheckInDialog();
-      void loadList();
+      void loadList(true);
       void loadGroupCounts();
     } catch (error) {
       logger.error('签到失败', error);
@@ -566,7 +566,7 @@ const CheckInPage = () => {
       await candidates.checkInById(created.id, session?.name);
       toast.success(`${manualForm.name} 登记并签到成功`);
       closeCheckInDialog();
-      void loadList();
+      void loadList(true);
       void loadGroupCounts();
     } catch (error) {
       logger.error('手动登记签到失败', error);
@@ -641,7 +641,7 @@ const CheckInPage = () => {
       toast.success(`${manualAddForm.name} 添加成功，已进入待分配队列`);
       setManualAddDialogOpen(false);
       setManualAddForm(emptyManualAddForm);
-      void loadList();
+      void loadList(true);
       void loadGroupCounts();
     } catch (error) {
       logger.error('手动添加失败', error);
@@ -780,7 +780,7 @@ const CheckInPage = () => {
       if (result.errors.length > 0) {
         logger.warn('CSV 导入部分失败', result.errors);
       }
-      void loadList();
+      void loadList(true);
     } catch (error) {
       logger.error('CSV 导入失败', error);
       toast.error('导入失败，请重试');
