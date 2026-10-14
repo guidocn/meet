@@ -18,9 +18,10 @@ const adminNavItems = [
   { path: '/results', label: '结果管理' },
 ];
 
-// 流动人员只显示签到分流台
-const floatingNavItems = [
+// 普通角色（流动人员、面试官）：只显示签到分流台和面试官工作台
+const normalNavItems = [
   { path: '/checkin', label: '签到分流台' },
+  { path: '/interview', label: '面试官工作台' },
 ];
 
 const ADMIN_PATHS = ['/checkin', '/interview', '/results', '/console'];
@@ -43,11 +44,12 @@ const Layout = () => {
     navigate('/login', { replace: true });
   };
 
+  // 管理员显示三个控制台，其他角色显示两个（签到分流台+面试官工作台）
   const navItems = !isAdmin 
     ? publicNavItems 
-    : session.role === 'floating' 
-      ? floatingNavItems 
-      : adminNavItems;
+    : session.role === 'admin' 
+      ? adminNavItems 
+      : normalNavItems;
 
   return (
     <div className="min-h-screen bg-slate-50">
