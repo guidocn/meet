@@ -24,31 +24,20 @@ const INTERVIEWERS = [
   { name: '刘代贵', groupName: 'D' },
 ];
 
-// 二面面试官（5个正式 + 5个备用）
-const SECOND_ROUND_INTERVIEWERS_MAIN = [
-  '二面官1',
-  '二面官2',
-  '二面官3',
-  '二面官4',
-  '二面官5',
-];
+// 二面面试官分组
+// A组：正式（默认开启）
+const SECOND_ROUND_GROUP_A = ['刘代贵'];
+// B组：备用（需要guido手动开启）
+const SECOND_ROUND_GROUP_B = ['备用二面官1', '备用二面官2'];
 
-const SECOND_ROUND_INTERVIEWERS_BACKUP = [
-  '备用二面官1',
-  '备用二面官2',
-  '备用二面官3',
-  '备用二面官4',
-  '备用二面官5',
-];
+// 备用二面B组开关（存在内存里，重启后恢复默认关闭）
+let _backupBEnabled = false;
 
-// 备用二面官开关（存在内存里，重启后恢复默认关闭）
-let _backupEnabled = false;
-
-// 获取所有二面面试官（根据开关决定是否包含备用）
+// 获取所有二面面试官（根据开关决定是否包含B组）
 function getAllSecondRoundInterviewers() {
-  return _backupEnabled 
-    ? [...SECOND_ROUND_INTERVIEWERS_MAIN, ...SECOND_ROUND_INTERVIEWERS_BACKUP]
-    : SECOND_ROUND_INTERVIEWERS_MAIN;
+  return _backupBEnabled 
+    ? [...SECOND_ROUND_GROUP_A, ...SECOND_ROUND_GROUP_B]
+    : SECOND_ROUND_GROUP_A;
 }
 
 const FLOATING_STAFF = [
@@ -886,6 +875,15 @@ export async function handleInterviewerLogin(db, body) {
   if (FLOATING_STAFF.includes(name)) {
     return { success: true, name, groupName: 'A', role: 'floating' };
   }
+  
+  // 二面面试官识别
+  if (SECOND_ROUND_GROUP_A.includes(name)) {
+    return { success: true, name, groupName: 'A', role: 'second_interviewer', isSecondRound: true };
+  }
+  if (_backupBEnabled && SECOND_ROUND_GROUP_B.includes(name)) {
+    return { success: true, name, groupName: 'B', role: 'second_interviewer', isSecondRound: true };
+  }
+  
   const found = INTERVIEWERS.find((i) => i.name === name);
   if (!found) return { success: false, message: '姓名不在面试官名单中' };
   return { success: true, name: found.name, groupName: found.groupName, role: 'interviewer' };
@@ -1117,8 +1115,8 @@ export async function handleSecondRoundLogin(db, body) {
     return { success: true, name: trimmedName, role: 'admin', isAdmin: true };
   }
   
-  if (SECOND_ROUND_INTERVIEWERS_MAIN.includes(trimmedName) || 
-      (_backupEnabled && SECOND_ROUND_INTERVIEWERS_BACKUP.includes(trimmedName))) {
+  if (SECOND_ROUND_GROUP_A.includes(trimmedName) || 
+      (_backupBEnabled && SECOND_ROUND_GROUP_B.includes(trimmedName))) {
     return { success: true, name: trimmedName, role: 'second_interviewer', isAdmin: false };
   }
   
@@ -1271,27 +1269,27 @@ export async function handleSecondRoundStats(db) {
   };
 }
 
-// 获取备用二面官开关状态（仅管理员）
+// 获取备用二面B组开关状态（仅管理员）
 export async function handleGetBackupStatus(db, operatorName) {
   if (operatorName !== ADMIN_NAME) throw forbidden('仅管理员可查看');
   return {
-    backupEnabled: _backupEnabled,
-    mainInterviewers: SECOND_ROUND_INTERVIEWERS_MAIN,
-    backupInterviewers: SECOND_ROUND_INTERVIEWERS_BACKUP,
+    backupBEnabled: _backupBEnabled,
+    groupA: SECOND_ROUND_GROUP_A,
+    groupB: SECOND_ROUND_GROUP_B,
   };
 }
 
-// 切换备用二面官开关（仅管理员）
+// 切换备用二面B组开关（仅管理员）
 export async function handleToggleBackup(db, body) {
   const { operatorName, enabled } = body;
   if (operatorName !== ADMIN_NAME) throw forbidden('仅管理员可操作');
   if (typeof enabled !== 'boolean') throw badRequest('参数错误');
   
-  _backupEnabled = enabled;
+  _backupBEnabled = enabled;
   
   return {
     success: true,
-    backupEnabled: _backupEnabled,
-    message: enabled ? '备用二面官已启用' : '备用二面官已关闭',
+    backupBEnabled: _backupBEnabled,
+    message: enabled ? '二面B组备用面试官已启用' : '二面B组备用面试官已关闭',
   };
 }
