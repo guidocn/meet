@@ -55,4 +55,7 @@ export default defineConfig({
   },
   plugins: [cloudflarePagesFix()],
   base: isCloudflarePages ? '/' : undefined,
+  build: {
+    sourcemap: false, // 生产环境关闭sourcemap，大幅减少文件大小
+  },
 });
