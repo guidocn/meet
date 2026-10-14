@@ -3,7 +3,7 @@
 
 // 内存缓存：减少D1读取次数（候场大屏和组统计共用）
 let _screenCache = { data: null, timestamp: 0 };
-const SCREEN_CACHE_TTL = 5000; // 5秒缓存
+const SCREEN_CACHE_TTL = 8000; // 8秒缓存，进一步减少D1读取
 
 // 清除缓存（数据变更时调用）
 function clearScreenCache() {
