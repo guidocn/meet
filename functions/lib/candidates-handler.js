@@ -896,10 +896,10 @@ export async function handleInterviewerLogin(db, body) {
   }
   
   // 二面面试官识别
-  if (SECOND_ROUND_GROUP_E.includes(trimmedName)) {
+  if (SECOND_ROUND_GROUP_E.includes(name)) {
     return { success: true, name, groupName: 'E', role: 'second_interviewer', isSecondRound: true };
   }
-  if (_backupFEnabled && SECOND_ROUND_GROUP_F.includes(trimmedName)) {
+  if (_backupFEnabled && SECOND_ROUND_GROUP_F.includes(name)) {
     return { success: true, name, groupName: 'F', role: 'second_interviewer', isSecondRound: true };
   }
   
