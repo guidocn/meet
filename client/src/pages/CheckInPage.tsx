@@ -850,11 +850,11 @@ const CheckInPage = () => {
          className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
        },
        first_completed: {
-         label: '一面完成',
+         label: '等待二面签到',
          className: 'bg-green-100 text-green-700 border-green-200',
        },
        second_waiting: {
-         label: '二面待面',
+         label: '二面待分配',
          className: 'bg-blue-100 text-blue-700 border-blue-200',
        },
        second_interviewing: {
@@ -1008,10 +1008,10 @@ const CheckInPage = () => {
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700 gap-1"
                 onClick={() => handleMoveToSecond(candidate.id)}
-                aria-label={`推进二面 ${candidate.name}`}
+                aria-label={`二面签到 ${candidate.name}`}
               >
                 <ArrowRight className="h-3 w-3" />
-                推进二面
+                二面签到
               </Button>
             )}
           </div>
