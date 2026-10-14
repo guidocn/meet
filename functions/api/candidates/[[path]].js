@@ -29,6 +29,7 @@ import {
   handleGetSecondRoundQueue,
   handleMoveToSecondRound,
   handleAssignSecondGroup,
+  handleSecondCheckInPublic,
   handleSecondRoundStart,
   handleSecondRoundDecision,
   handleSecondRoundStats,
@@ -191,6 +192,11 @@ export async function onRequest(context) {
     // 二面分配组别（E/F组）
     if (method === 'POST' && path === '/second/assign-group') {
       return jsonResponse(await handleAssignSecondGroup(db, await request.json()));
+    }
+
+    // 二面签到（学生自己扫码）
+    if (method === 'POST' && path === '/second/check-in') {
+      return jsonResponse(await handleSecondCheckInPublic(db, await request.json()));
     }
 
     // 二面叫号

@@ -1218,6 +1218,29 @@ export async function handleAssignSecondGroup(db, body) {
   return mapRowToCandidate(updated);
 }
 
+// 二面签到（学生自己扫码）
+export async function handleSecondCheckInPublic(db, body) {
+  const { candidateId } = body;
+  if (!candidateId) throw badRequest('缺少考生ID');
+  
+  const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  if (!existing) throw notFound('考生不存在');
+  
+  // 只有一面通过的人才能二面签到
+  if (existing.status !== 'first_completed') {
+    throw badRequest('只有一面通过的同学才能进行二面签到，请确认您的一面结果');
+  }
+  
+  const now = new Date().toISOString();
+  await db.prepare("UPDATE candidates SET status = 'second_waiting', _updated_at = ? WHERE id = ?")
+    .bind(now, candidateId)
+    .run();
+  
+  clearScreenCache();
+  const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  return mapRowToCandidate(updated);
+}
+
 // 二面叫号（开始面试）
 export async function handleSecondRoundStart(db, body) {
   const { candidateId, interviewerName } = body;

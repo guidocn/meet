@@ -256,6 +256,16 @@ export async function assignSecondGroup(
   });
 }
 
+// 二面签到（学生自己扫码）
+export async function secondCheckInPublic(
+  candidateId: string,
+): Promise<Candidate> {
+  return request<Candidate>(`/api/candidates/second/check-in`, {
+    method: 'POST',
+    body: JSON.stringify({ candidateId }),
+  });
+}
+
 export async function getBigScreenData(): Promise<BigScreenData> {
   return request<BigScreenData>('/api/candidates/display/big-screen');
 }

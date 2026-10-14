@@ -241,6 +241,26 @@ const PreRegisterPage: React.FC = () => {
   };
 
   const handleDirectCheckIn = async (candidate: Candidate) => {
+    // 一面通过的人 → 二面签到
+    if (candidate.status === 'first_completed') {
+      setSubmitting(true);
+      try {
+        const result = await candidates.secondCheckInPublic(candidate.id);
+        setCheckInResult(result);
+        setIsNewRegistration(false);
+        navigate(`/ticket?id=${result.id}`);
+        toast.success('二面签到成功！请等待分配E/F组');
+      } catch (error: any) {
+        logger.error('二面签到失败', error);
+        const msg =
+          error?.response?.data?.message || error?.message || '二面签到失败，请重试';
+        toast.error(msg);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (candidate.status !== 'pre_registered') {
       navigate(`/ticket?id=${candidate.id}`);
       return;
@@ -407,14 +427,18 @@ const PreRegisterPage: React.FC = () => {
                     className={`w-full h-12 text-base shadow-lg ${
                       selectedCandidate.status === 'pre_registered'
                         ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-emerald-200'
-                        : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-indigo-200'
+                        : selectedCandidate.status === 'first_completed'
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-blue-200'
+                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-indigo-200'
                     }`}
                   >
                     {submitting
                       ? '签到中...'
                       : selectedCandidate.status === 'pre_registered'
-                        ? '确认签到'
-                        : '查看取号信息'}
+                        ? '一面签到'
+                        : selectedCandidate.status === 'first_completed'
+                          ? '二面签到'
+                          : '查看取号信息'}
                   </Button>
                 )}
 
