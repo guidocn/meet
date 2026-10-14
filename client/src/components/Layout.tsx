@@ -18,6 +18,11 @@ const adminNavItems = [
   { path: '/results', label: '结果管理' },
 ];
 
+// 流动人员只显示签到分流台
+const floatingNavItems = [
+  { path: '/checkin', label: '签到分流台' },
+];
+
 const ADMIN_PATHS = ['/checkin', '/interview', '/results', '/console'];
 
 const Layout = () => {
@@ -38,7 +43,11 @@ const Layout = () => {
     navigate('/login', { replace: true });
   };
 
-  const navItems = isAdmin ? adminNavItems : publicNavItems;
+  const navItems = !isAdmin 
+    ? publicNavItems 
+    : session.role === 'floating' 
+      ? floatingNavItems 
+      : adminNavItems;
 
   return (
     <div className="min-h-screen bg-slate-50">
