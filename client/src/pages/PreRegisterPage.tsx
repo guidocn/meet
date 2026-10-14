@@ -65,7 +65,7 @@ const DEPARTMENT_OPTIONS = [
   },
 ];
 
-type PageState = 'query' | 'found' | 'notFound' | 'checkInSuccess';
+type PageState = 'chooseType' | 'query' | 'found' | 'notFound' | 'checkInSuccess';
 
 interface FormData {
   className: string;
@@ -110,7 +110,8 @@ const PreRegisterPage: React.FC = () => {
   const [queryError, setQueryError] = useState('');
   const [searching, setSearching] = useState(false);
 
-  const [pageState, setPageState] = useState<PageState>('query');
+  const [pageState, setPageState] = useState<PageState>('chooseType');
+  const [interviewType, setInterviewType] = useState<'first' | 'second'>('first');
   const [matchedCandidates, setMatchedCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
 
@@ -321,12 +322,36 @@ const PreRegisterPage: React.FC = () => {
               党支部义务电脑维修队
             </CardTitle>
             <CardDescription className="text-base text-slate-500 mt-1">
-              {pageState === 'query' && '招新面试签到'}
+              {pageState === 'chooseType' && '请选择面试场次'}
+              {pageState === 'query' && (interviewType === 'first' ? '一面签到' : '二面签到')}
               {pageState === 'found' && '已查到报名信息'}
               {pageState === 'notFound' && '填写信息完成签到'}
               {pageState === 'checkInSuccess' && '签到成功'}
             </CardDescription>
           </CardHeader>
+
+          {/* 选择一面/二面 */}
+          {pageState === 'chooseType' && (
+            <div className="p-6 pt-2">
+              <div className="grid grid-cols-1 gap-4">
+                <button
+                  onClick={() => { setInterviewType('first'); setPageState('query'); }}
+                  className="w-full p-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg hover:from-emerald-600 hover:to-teal-700 transition-all transform hover:scale-[1.02]"
+                >
+                  <div className="text-2xl font-bold mb-2">一面签到</div>
+                  <div className="text-sm opacity-90">第一次参加面试的同学点这里</div>
+                </button>
+                <button
+                  onClick={() => { setInterviewType('second'); setPageState('query'); }}
+                  className="w-full p-6 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg hover:from-purple-600 hover:to-indigo-700 transition-all transform hover:scale-[1.02]"
+                >
+                  <div className="text-2xl font-bold mb-2">二面签到</div>
+                  <div className="text-sm opacity-90">一面通过、参加二面的同学点这里</div>
+                </button>
+              </div>
+            </div>
+          )}
+
           <CardContent className="pt-4">
             {pageState === 'query' && (
               <div className="space-y-4">
