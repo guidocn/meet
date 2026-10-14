@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Ticket, Clock, CheckCircle2, Hourglass, Award, Loader2, AlertCircle, Monitor, Palette, Handshake, Users, Star, Clock as ClockIcon, Lightbulb, HeartHandshake, Save } from 'lucide-react';
+import { Ticket, Clock, CheckCircle2, Hourglass, Award, Loader2, AlertCircle, Monitor, Palette, Handshake, Users, Star, Clock as ClockIcon, Lightbulb, HeartHandshake, Save, XCircle } from 'lucide-react';
 import logoImg from '@client/src/assets/logo.webp';
 import { toast } from 'sonner';
 import { logger } from '@lark-apaas/client-toolkit/logger';
@@ -301,6 +301,50 @@ const TicketPage: React.FC = () => {
 
             {/* 状态描述 */}
             <div className="bg-white rounded-xl p-4 border border-slate-100 text-center">
+              {/* 二面状态 */}
+              {candidate.status === 'second_waiting' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-purple-600">
+                    <Hourglass className="w-5 h-5" />
+                    <span className="font-semibold">二面签到成功！</span>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    请稍等，工作人员正在为您分配E/F组
+                  </p>
+                </div>
+              )}
+              {candidate.status === 'second_interviewing' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-purple-600">
+                    <Clock className="w-5 h-5" />
+                    <span className="font-semibold">二面进行中</span>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    您在{candidate.groupName}组，请等待叫号
+                  </p>
+                </div>
+              )}
+              {candidate.status === 'final_admitted' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-emerald-600">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="font-semibold">恭喜！您已被录取</span>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    分配部门：{candidate.final_department || '待定'}
+                  </p>
+                </div>
+              )}
+              {candidate.status === 'final_rejected' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-rose-600">
+                    <XCircle className="w-5 h-5" />
+                    <span className="font-semibold">很遗憾，您未通过二面</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 一面状态 */}
               {candidate.status === 'interviewing' && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-center gap-2 text-amber-600">
@@ -325,9 +369,11 @@ const TicketPage: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-center gap-2 text-emerald-600">
                     <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-semibold">已完成一轮面试</span>
+                    <span className="font-semibold">一面已完成，等待二面通知</span>
                   </div>
-                  <p className="text-sm text-slate-500">{statusInfo.desc}</p>
+                  <p className="text-sm text-slate-500">
+                    请扫码进行二面签到
+                  </p>
                 </div>
               )}
               {candidate.status === 'waiting' && (
