@@ -868,11 +868,11 @@ const CheckInPage = () => {
          className: 'bg-yellow-100 text-yellow-700 border-yellow-200',
        },
        first_completed: {
-         label: '等待二面签到',
+         label: '一面完成',
          className: 'bg-green-100 text-green-700 border-green-200',
        },
        completed: {
-         label: '等待二面签到',
+         label: '一面完成',
          className: 'bg-green-100 text-green-700 border-green-200',
        },
        second_waiting: {
@@ -884,16 +884,12 @@ const CheckInPage = () => {
          className: 'bg-purple-100 text-purple-700 border-purple-200',
        },
        final_admitted: {
-         label: '录取',
+         label: '已录取',
          className: 'bg-emerald-100 text-emerald-700 border-emerald-200',
        },
        final_rejected: {
-         label: '淘汰',
+         label: '已淘汰',
          className: 'bg-red-100 text-red-700 border-red-200',
-       },
-       completed: {
-         label: '已完成',
-         className: 'bg-emerald-100 text-emerald-700 border-emerald-200',
        },
      };
     const info = map[status] ?? map.pre_registered;
