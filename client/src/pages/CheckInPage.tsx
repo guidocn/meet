@@ -237,12 +237,29 @@ const CheckInPage = () => {
     }
     try {
       await candidates.moveToSecondRound(candidateId, session?.name ?? '');
-      toast.success('已推进到二面');
+      toast.success('二面签到成功');
       void loadList(true);
       void loadGroupCounts();
     } catch (error) {
-      logger.error('推进二面失败', error);
-      toast.error('推进二面失败，请重试');
+      logger.error('二面签到失败', error);
+      toast.error('二面签到失败，请重试');
+    }
+  };
+
+  // 二面分配组别（E/F组）
+  const handleAssignSecondGroup = async (candidateId: string, groupName: string) => {
+    if (!canOperateFlow) {
+      toast.error('无权限操作，仅管理员和流动人员可操作');
+      return;
+    }
+    try {
+      await candidates.assignSecondGroup(candidateId, groupName, session?.name ?? '');
+      toast.success(`已分配到${groupName}组`);
+      void loadList(true);
+      void loadGroupCounts();
+    } catch (error) {
+      logger.error('二面分配失败', error);
+      toast.error('二面分配失败，请重试');
     }
   };
 
@@ -996,12 +1013,12 @@ const CheckInPage = () => {
       );
     }
 
-    // 一面完成 → 推进到二面
+    // 一面完成 → 二面签到
     if (candidate.status === 'first_completed') {
       return (
         <div className="flex flex-col gap-2 items-start">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">一面完成，等待推进二面</span>
+            <span className="text-xs text-slate-500">等待二面签到</span>
             {renderInterviewStatusBadge(candidate.status)}
             {canOperateFlow && (
               <Button
@@ -1013,6 +1030,38 @@ const CheckInPage = () => {
                 <ArrowRight className="h-3 w-3" />
                 二面签到
               </Button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // 二面待分配 → 分配E/F组
+    if (candidate.status === 'second_waiting') {
+      return (
+        <div className="flex flex-col gap-2 items-start">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500">二面待分配</span>
+            {renderInterviewStatusBadge(candidate.status)}
+            {canOperateFlow && (
+              <>
+                <Button
+                  size="sm"
+                  className="bg-purple-600 hover:bg-purple-700 gap-1"
+                  onClick={() => handleAssignSecondGroup(candidate.id, 'E')}
+                  aria-label={`分配到E组 ${candidate.name}`}
+                >
+                  E组
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-pink-600 hover:bg-pink-700 gap-1"
+                  onClick={() => handleAssignSecondGroup(candidate.id, 'F')}
+                  aria-label={`分配到F组 ${candidate.name}`}
+                >
+                  F组
+                </Button>
+              </>
             )}
           </div>
         </div>

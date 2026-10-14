@@ -244,6 +244,18 @@ export async function moveToSecondRound(
   });
 }
 
+// 二面分配组别（E/F组）
+export async function assignSecondGroup(
+  candidateId: string,
+  groupName: string,
+  operatorName: string,
+): Promise<Candidate> {
+  return request<Candidate>(`/api/candidates/second/assign-group`, {
+    method: 'POST',
+    body: JSON.stringify({ candidateId, groupName, operatorName }),
+  });
+}
+
 export async function getBigScreenData(): Promise<BigScreenData> {
   return request<BigScreenData>('/api/candidates/display/big-screen');
 }

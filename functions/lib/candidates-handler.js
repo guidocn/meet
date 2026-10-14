@@ -1189,6 +1189,35 @@ export async function handleMoveToSecondRound(db, body) {
   return mapRowToCandidate(updated);
 }
 
+// 二面分配组别（E/F组）
+export async function handleAssignSecondGroup(db, body) {
+  const { candidateId, groupName, operatorName } = body;
+  if (!candidateId || !groupName) throw badRequest('缺少参数');
+  if (!['E', 'F'].includes(groupName)) throw badRequest('二面组别只能是E或F');
+  
+  const role = getInterviewerRole(operatorName);
+  if (role === 'interviewer') throw forbidden('无权限操作，仅管理员和流动人员可执行');
+  
+  const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  if (!existing) throw notFound('考生不存在');
+  if (existing.status !== 'second_waiting') throw badRequest('当前状态不能分配二面组别');
+  
+  // 计算组内序号：该组已有的最大序号 + 1
+  const groupRows = await db.prepare("SELECT * FROM candidates WHERE group_name = ? AND (status = 'second_waiting' OR status = 'second_interviewing' OR status = 'final_admitted' OR status = 'final_rejected')").bind(groupName).all();
+  const groupRowsData = groupRows.results || [];
+  const maxGroupNumber = groupRowsData.reduce((max, row) => Math.max(max, row.group_number || 0), 0);
+  const newGroupNumber = maxGroupNumber + 1;
+  
+  const now = new Date().toISOString();
+  await db.prepare("UPDATE candidates SET group_name = ?, group_number = ?, _updated_at = ? WHERE id = ?")
+    .bind(groupName, newGroupNumber, now, candidateId)
+    .run();
+  
+  clearScreenCache();
+  const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  return mapRowToCandidate(updated);
+}
+
 // 二面叫号（开始面试）
 export async function handleSecondRoundStart(db, body) {
   const { candidateId, interviewerName } = body;

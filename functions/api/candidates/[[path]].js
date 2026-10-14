@@ -28,6 +28,7 @@ import {
   handleSecondRoundLogin,
   handleGetSecondRoundQueue,
   handleMoveToSecondRound,
+  handleAssignSecondGroup,
   handleSecondRoundStart,
   handleSecondRoundDecision,
   handleSecondRoundStats,
@@ -185,6 +186,11 @@ export async function onRequest(context) {
     // 一面通过进入二面（管理员操作）
     if (method === 'POST' && path === '/second/move-to') {
       return jsonResponse(await handleMoveToSecondRound(db, await request.json()));
+    }
+
+    // 二面分配组别（E/F组）
+    if (method === 'POST' && path === '/second/assign-group') {
+      return jsonResponse(await handleAssignSecondGroup(db, await request.json()));
     }
 
     // 二面叫号
