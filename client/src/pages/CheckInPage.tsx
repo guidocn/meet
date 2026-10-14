@@ -870,6 +870,10 @@ const CheckInPage = () => {
          label: '等待二面签到',
          className: 'bg-green-100 text-green-700 border-green-200',
        },
+       completed: {
+         label: '等待二面签到',
+         className: 'bg-green-100 text-green-700 border-green-200',
+       },
        second_waiting: {
          label: '二面待分配',
          className: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -1014,7 +1018,7 @@ const CheckInPage = () => {
     }
 
     // 一面完成 → 二面签到
-    if (candidate.status === 'first_completed') {
+    if (candidate.status === 'first_completed' || candidate.status === 'completed') {
       return (
         <div className="flex flex-col gap-2 items-start">
           <div className="flex items-center gap-2">

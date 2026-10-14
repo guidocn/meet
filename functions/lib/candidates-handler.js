@@ -1177,7 +1177,7 @@ export async function handleMoveToSecondRound(db, body) {
   
   const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
   if (!existing) throw notFound('考生不存在');
-  if (existing.status !== 'first_completed') throw badRequest('当前状态不能进入二面');
+  if (existing.status !== 'first_completed' && existing.status !== 'completed') throw badRequest('当前状态不能进入二面');
   
   const now = new Date().toISOString();
   await db.prepare("UPDATE candidates SET status = 'second_waiting', _updated_at = ? WHERE id = ?")
@@ -1227,7 +1227,7 @@ export async function handleSecondCheckInPublic(db, body) {
   if (!existing) throw notFound('考生不存在');
   
   // 只有一面通过的人才能二面签到
-  if (existing.status !== 'first_completed') {
+  if (existing.status !== 'first_completed' && existing.status !== 'completed') {
     throw badRequest('只有一面通过的同学才能进行二面签到，请确认您的一面结果');
   }
   
