@@ -24,14 +24,32 @@ const INTERVIEWERS = [
   { name: '刘代贵', groupName: 'D' },
 ];
 
-// 二面面试官（5人）
-const SECOND_ROUND_INTERVIEWERS = [
-  '面试官1',
-  '面试官2',
-  '面试官3',
-  '面试官4',
-  '面试官5',
+// 二面面试官（5个正式 + 5个备用）
+const SECOND_ROUND_INTERVIEWERS_MAIN = [
+  '二面官1',
+  '二面官2',
+  '二面官3',
+  '二面官4',
+  '二面官5',
 ];
+
+const SECOND_ROUND_INTERVIEWERS_BACKUP = [
+  '备用二面官1',
+  '备用二面官2',
+  '备用二面官3',
+  '备用二面官4',
+  '备用二面官5',
+];
+
+// 备用二面官开关（存在内存里，重启后恢复默认关闭）
+let _backupEnabled = false;
+
+// 获取所有二面面试官（根据开关决定是否包含备用）
+function getAllSecondRoundInterviewers() {
+  return _backupEnabled 
+    ? [...SECOND_ROUND_INTERVIEWERS_MAIN, ...SECOND_ROUND_INTERVIEWERS_BACKUP]
+    : SECOND_ROUND_INTERVIEWERS_MAIN;
+}
 
 const FLOATING_STAFF = [
   '梁文燕',
@@ -1099,7 +1117,8 @@ export async function handleSecondRoundLogin(db, body) {
     return { success: true, name: trimmedName, role: 'admin', isAdmin: true };
   }
   
-  if (SECOND_ROUND_INTERVIEWERS.includes(trimmedName)) {
+  if (SECOND_ROUND_INTERVIEWERS_MAIN.includes(trimmedName) || 
+      (_backupEnabled && SECOND_ROUND_INTERVIEWERS_BACKUP.includes(trimmedName))) {
     return { success: true, name: trimmedName, role: 'second_interviewer', isAdmin: false };
   }
   
@@ -1159,7 +1178,7 @@ export async function handleSecondRoundStart(db, body) {
   if (!candidateId) throw badRequest('缺少考生ID');
   if (!interviewerName) throw badRequest('缺少面试官姓名');
   
-  if (!SECOND_ROUND_INTERVIEWERS.includes(interviewerName) && interviewerName !== ADMIN_NAME) {
+  if (!getAllSecondRoundInterviewers().includes(interviewerName) && interviewerName !== ADMIN_NAME) {
     throw forbidden('无权限操作，仅二面面试官可叫号');
   }
   
@@ -1193,7 +1212,7 @@ export async function handleSecondRoundDecision(db, body) {
   if (!decision) throw badRequest('缺少决策结果');
   if (!['admitted', 'rejected'].includes(decision)) throw badRequest('决策结果无效');
   
-  if (!SECOND_ROUND_INTERVIEWERS.includes(interviewerName) && interviewerName !== ADMIN_NAME) {
+  if (!getAllSecondRoundInterviewers().includes(interviewerName) && interviewerName !== ADMIN_NAME) {
     throw forbidden('无权限操作，仅二面面试官可提交');
   }
   
@@ -1249,5 +1268,30 @@ export async function handleSecondRoundStats(db) {
     interviewingSecond: result?.interviewingSecond || 0,
     admitted: result?.admitted || 0,
     rejected: result?.rejected || 0,
+  };
+}
+
+// 获取备用二面官开关状态（仅管理员）
+export async function handleGetBackupStatus(db, operatorName) {
+  if (operatorName !== ADMIN_NAME) throw forbidden('仅管理员可查看');
+  return {
+    backupEnabled: _backupEnabled,
+    mainInterviewers: SECOND_ROUND_INTERVIEWERS_MAIN,
+    backupInterviewers: SECOND_ROUND_INTERVIEWERS_BACKUP,
+  };
+}
+
+// 切换备用二面官开关（仅管理员）
+export async function handleToggleBackup(db, body) {
+  const { operatorName, enabled } = body;
+  if (operatorName !== ADMIN_NAME) throw forbidden('仅管理员可操作');
+  if (typeof enabled !== 'boolean') throw badRequest('参数错误');
+  
+  _backupEnabled = enabled;
+  
+  return {
+    success: true,
+    backupEnabled: _backupEnabled,
+    message: enabled ? '备用二面官已启用' : '备用二面官已关闭',
   };
 }

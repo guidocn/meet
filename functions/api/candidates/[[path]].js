@@ -31,6 +31,8 @@ import {
   handleSecondRoundStart,
   handleSecondRoundDecision,
   handleSecondRoundStats,
+  handleGetBackupStatus,
+  handleToggleBackup,
 } from '../../lib/candidates-handler';
 
 export async function onRequest(context) {
@@ -196,6 +198,17 @@ export async function onRequest(context) {
     // 二面统计
     if (method === 'GET' && path === '/second/stats') {
       return jsonResponse(await handleSecondRoundStats(db));
+    }
+
+    // 备用二面官开关状态
+    if (method === 'GET' && path === '/second/backup-status') {
+      const operatorName = url.searchParams.get('operatorName') || '';
+      return jsonResponse(await handleGetBackupStatus(db, operatorName));
+    }
+
+    // 切换备用二面官开关
+    if (method === 'POST' && path === '/second/toggle-backup') {
+      return jsonResponse(await handleToggleBackup(db, await request.json()));
     }
 
     // 搜索列表（兜底放最后，避免匹配到更具体的路径）
