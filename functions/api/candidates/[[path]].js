@@ -24,6 +24,13 @@ import {
   handleApprove,
   handleDeleteCandidate,
   handleDeleteAll,
+  // 二面相关
+  handleSecondRoundLogin,
+  handleGetSecondRoundQueue,
+  handleMoveToSecondRound,
+  handleSecondRoundStart,
+  handleSecondRoundDecision,
+  handleSecondRoundStats,
 } from '../../lib/candidates-handler';
 
 export async function onRequest(context) {
@@ -158,6 +165,37 @@ export async function onRequest(context) {
     // 改派组别
     if (method === 'POST' && path === '/reassign-group') {
       return jsonResponse(await handleReassignGroup(db, await request.json()));
+    }
+
+    // ========== 二面相关路由 ==========
+    // 二面面试官登录
+    if (method === 'POST' && path === '/second/login') {
+      return jsonResponse(await handleSecondRoundLogin(db, await request.json()));
+    }
+
+    // 获取二面队列
+    if (method === 'GET' && path === '/second/queue') {
+      return jsonResponse(await handleGetSecondRoundQueue(db));
+    }
+
+    // 一面通过进入二面（管理员操作）
+    if (method === 'POST' && path === '/second/move-to') {
+      return jsonResponse(await handleMoveToSecondRound(db, await request.json()));
+    }
+
+    // 二面叫号
+    if (method === 'POST' && path === '/second/start') {
+      return jsonResponse(await handleSecondRoundStart(db, await request.json()));
+    }
+
+    // 二面决策（打分+录取/淘汰）
+    if (method === 'POST' && path === '/second/decision') {
+      return jsonResponse(await handleSecondRoundDecision(db, await request.json()));
+    }
+
+    // 二面统计
+    if (method === 'GET' && path === '/second/stats') {
+      return jsonResponse(await handleSecondRoundStats(db));
     }
 
     // 搜索列表（兜底放最后，避免匹配到更具体的路径）

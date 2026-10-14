@@ -24,6 +24,15 @@ const INTERVIEWERS = [
   { name: '刘代贵', groupName: 'D' },
 ];
 
+// 二面面试官（5人）
+const SECOND_ROUND_INTERVIEWERS = [
+  '面试官1',
+  '面试官2',
+  '面试官3',
+  '面试官4',
+  '面试官5',
+];
+
 const FLOATING_STAFF = [
   '梁文燕',
   '李旭涵',
@@ -43,16 +52,25 @@ const VALID_STATUSES = [
   'waiting',
   'interviewing',
   'pending_approval',
-  'completed',
+  'first_completed',  // 一面完成，等待二面
+  'second_waiting',   // 二面待面试
+  'second_interviewing', // 二面面试中
+  'final_admitted',   // 录取
+  'final_rejected',   // 淘汰
   'absent',
 ];
 
 const STATUS_TRANSITIONS = {
   pre_registered: ['waiting'],
-  waiting: ['interviewing', 'completed'],
+  waiting: ['interviewing', 'first_completed'],
   interviewing: ['pending_approval'],
-  pending_approval: ['completed'],
-  completed: [],
+  pending_approval: ['first_completed'],
+  first_completed: ['second_waiting'],
+  second_waiting: ['second_interviewing', 'final_rejected'],
+  second_interviewing: ['final_admitted', 'final_rejected'],
+  final_admitted: [],
+  final_rejected: [],
+  absent: [],
 };
 
 function getInterviewerRole(name) {
@@ -120,6 +138,11 @@ function mapRowToCandidate(row, scores = []) {
     scoredCount,
     groupInterviewerCount,
     scores,
+    // 二面相关字段
+    secondScore: row.second_score ?? null,
+    secondComment: row.second_comment || null,
+    secondInterviewer: row.second_interviewer || null,
+    finalDepartment: row.final_department || null,
     createdAt: row._created_at,
   };
 }
@@ -1014,7 +1037,7 @@ export async function handleApprove(db, id, body) {
   if (existing.status !== 'pending_approval') throw badRequest('当前考生状态不是待审批，无法审批通过');
 
   const now = new Date().toISOString();
-  await db.prepare("UPDATE candidates SET status = 'completed', _updated_at = ? WHERE id = ?").bind(now, id).run();
+  await db.prepare("UPDATE candidates SET status = 'first_completed', _updated_at = ? WHERE id = ?").bind(now, id).run();
 
   // 审批通过后，重新计算该组的组内序号
   if (existing.group_name) {
@@ -1062,4 +1085,169 @@ export async function handleDeleteAll(db, body) {
 
   clearScreenCache(); // 清除缓存
   return { success: true, deletedCount: count };
+}
+
+// ========== 二面相关API ==========
+
+// 二面面试官登录
+export async function handleSecondRoundLogin(db, body) {
+  const { name } = body;
+  if (!name || !name.trim()) throw badRequest('请输入面试官姓名');
+  
+  const trimmedName = name.trim();
+  if (trimmedName === ADMIN_NAME) {
+    return { success: true, name: trimmedName, role: 'admin', isAdmin: true };
+  }
+  
+  if (SECOND_ROUND_INTERVIEWERS.includes(trimmedName)) {
+    return { success: true, name: trimmedName, role: 'second_interviewer', isAdmin: false };
+  }
+  
+  throw badRequest('二面面试官身份未登记，请输入正确的姓名');
+}
+
+// 获取二面队列（一面通过等待二面的人 + 二面进行中的人）
+export async function handleGetSecondRoundQueue(db) {
+  // 一面完成等待二面的人
+  const waitingResult = await db
+    .prepare("SELECT * FROM candidates WHERE status IN ('first_completed', 'second_waiting') ORDER BY global_number ASC, _created_at ASC")
+    .all();
+  const waitingRows = waitingResult.results || [];
+  
+  // 二面进行中的人
+  const interviewingResult = await db
+    .prepare("SELECT * FROM candidates WHERE status = 'second_interviewing' ORDER BY global_number ASC")
+    .all();
+  const interviewingRows = interviewingResult.results || [];
+  
+  // 获取一面评分
+  const allIds = [...waitingRows, ...interviewingRows].map(r => r.id);
+  const scores = await getScoresByCandidateIds(db, allIds);
+  const scoreMap = groupScoresById(scores);
+  
+  return {
+    waiting: waitingRows.map(row => mapRowToCandidate(row, scoreMap.get(row.id) || [])),
+    interviewing: interviewingRows.map(row => mapRowToCandidate(row, scoreMap.get(row.id) || [])),
+  };
+}
+
+// 一面通过的人进入二面待面试（管理员操作）
+export async function handleMoveToSecondRound(db, body) {
+  const { candidateId, operatorName } = body;
+  if (!candidateId) throw badRequest('缺少考生ID');
+  
+  const role = getInterviewerRole(operatorName);
+  if (role === 'interviewer') throw forbidden('无权限操作，仅管理员和流动人员可执行');
+  
+  const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  if (!existing) throw notFound('考生不存在');
+  if (existing.status !== 'first_completed') throw badRequest('当前状态不能进入二面');
+  
+  const now = new Date().toISOString();
+  await db.prepare("UPDATE candidates SET status = 'second_waiting', _updated_at = ? WHERE id = ?")
+    .bind(now, candidateId)
+    .run();
+  
+  clearScreenCache();
+  const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  return mapRowToCandidate(updated);
+}
+
+// 二面叫号（开始面试）
+export async function handleSecondRoundStart(db, body) {
+  const { candidateId, interviewerName } = body;
+  if (!candidateId) throw badRequest('缺少考生ID');
+  if (!interviewerName) throw badRequest('缺少面试官姓名');
+  
+  if (!SECOND_ROUND_INTERVIEWERS.includes(interviewerName) && interviewerName !== ADMIN_NAME) {
+    throw forbidden('无权限操作，仅二面面试官可叫号');
+  }
+  
+  const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  if (!existing) throw notFound('考生不存在');
+  if (existing.status !== 'second_waiting') throw badRequest('该考生当前状态不能叫号');
+  
+  // 检查是否已经有人在二面中
+  const activeResult = await db
+    .prepare("SELECT COUNT(*) as cnt FROM candidates WHERE status = 'second_interviewing'")
+    .first();
+  if (activeResult.cnt > 0) {
+    throw badRequest('已有面试者正在二面中，请等完成后再叫下一位');
+  }
+  
+  const now = new Date().toISOString();
+  await db.prepare("UPDATE candidates SET status = 'second_interviewing', second_interviewer = ?, _updated_at = ? WHERE id = ?")
+    .bind(interviewerName, now, candidateId)
+    .run();
+  
+  clearScreenCache();
+  const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  const scores = await getScoresByCandidateIds(db, [candidateId]);
+  return mapRowToCandidate(updated, scores);
+}
+
+// 二面打分 + 录取/淘汰决策
+export async function handleSecondRoundDecision(db, body) {
+  const { candidateId, score, comment, decision, finalDepartment, interviewerName } = body;
+  if (!candidateId) throw badRequest('缺少考生ID');
+  if (!decision) throw badRequest('缺少决策结果');
+  if (!['admitted', 'rejected'].includes(decision)) throw badRequest('决策结果无效');
+  
+  if (!SECOND_ROUND_INTERVIEWERS.includes(interviewerName) && interviewerName !== ADMIN_NAME) {
+    throw forbidden('无权限操作，仅二面面试官可提交');
+  }
+  
+  const existing = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  if (!existing) throw notFound('考生不存在');
+  if (existing.status !== 'second_interviewing') throw badRequest('该考生当前状态不能提交决策');
+  
+  // 录取的话需要选择部门
+  let dept = null;
+  if (decision === 'admitted') {
+    if (!finalDepartment || !finalDepartment.trim()) {
+      throw badRequest('录取后必须选择分配部门');
+    }
+    const validDepts = ['技术部', '宣传部', '外联部'];
+    if (!validDepts.includes(finalDepartment)) {
+      throw badRequest('部门选项无效');
+    }
+    dept = finalDepartment;
+  }
+  
+  const now = new Date().toISOString();
+  const newStatus = decision === 'admitted' ? 'final_admitted' : 'final_rejected';
+  
+  await db.prepare(`
+    UPDATE candidates 
+    SET status = ?, second_score = ?, second_comment = ?, final_department = ?, _updated_at = ? 
+    WHERE id = ?
+  `)
+    .bind(newStatus, score || null, comment || null, dept, now, candidateId)
+    .run();
+  
+  clearScreenCache();
+  const updated = await db.prepare('SELECT * FROM candidates WHERE id = ?').bind(candidateId).first();
+  const scores = await getScoresByCandidateIds(db, [candidateId]);
+  return mapRowToCandidate(updated, scores);
+}
+
+// 一面审批通过后状态变为 first_completed（修改原approve函数的返回）
+export async function handleSecondRoundStats(db) {
+  const result = await db.prepare(`
+    SELECT 
+      COUNT(*) as total,
+      SUM(CASE WHEN status = 'first_completed' OR status = 'second_waiting' THEN 1 ELSE 0 END) as waitingSecond,
+      SUM(CASE WHEN status = 'second_interviewing' THEN 1 ELSE 0 END) as interviewingSecond,
+      SUM(CASE WHEN status = 'final_admitted' THEN 1 ELSE 0 END) as admitted,
+      SUM(CASE WHEN status = 'final_rejected' THEN 1 ELSE 0 END) as rejected
+    FROM candidates
+  `).first();
+  
+  return {
+    total: result?.total || 0,
+    waitingSecond: result?.waitingSecond || 0,
+    interviewingSecond: result?.interviewingSecond || 0,
+    admitted: result?.admitted || 0,
+    rejected: result?.rejected || 0,
+  };
 }

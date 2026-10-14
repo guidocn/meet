@@ -13,6 +13,8 @@ const TicketPage = lazy(() => import('./pages/TicketPage'));
 const CheckInPage = lazy(() => import('./pages/CheckInPage'));
 // 面试官工作台（后台）
 const InterviewPage = lazy(() => import('./pages/InterviewPage'));
+// 二面面试官工作台
+const SecondRoundPage = lazy(() => import('./pages/SecondRoundPage'));
 // 候场大屏（独立页面，重型粒子效果，不影响首页加载）
 const DisplayPage = lazy(() => import('./pages/DisplayPage'));
 // 结果管理（后台）
@@ -43,6 +45,7 @@ const RoutesComponent = () => {
           <Route path="ticket" element={<TicketPage />} />
           <Route path="checkin" element={<ProtectedRoute><CheckInPage /></ProtectedRoute>} />
           <Route path="interview" element={<ProtectedRoute><InterviewPage /></ProtectedRoute>} />
+          <Route path="second-round" element={<SecondRoundPage />} />
           <Route path="results" element={<ProtectedRoute requireAdmin noPermissionMessage="仅管理员可查看结果"><ResultsPage /></ProtectedRoute>} />
           <Route path="console" element={<ProtectedRoute><ConsolePage /></ProtectedRoute>} />
         </Route>
