@@ -785,8 +785,8 @@ export async function handleGetBigScreen(db) {
 
     const waitingRows = isSecondMode
       ? groupRows.filter((row) => row.status === 'second_waiting')
-      : groupRows.filter((row) => row.status === 'waiting');
-      .sort((a, b) => (a.group_number ?? Number.MAX_SAFE_INTEGER) - (b.group_number ?? Number.MAX_SAFE_INTEGER));
+      : groupRows.filter((row) => row.status === 'waiting')
+        .sort((a, b) => (a.group_number ?? Number.MAX_SAFE_INTEGER) - (b.group_number ?? Number.MAX_SAFE_INTEGER));
 
     const completedCount = groupRows.filter((row) => row.status === 'completed').length;
 

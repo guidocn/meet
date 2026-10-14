@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<script>
+(function(){
+  var needsPolyfill=(function(){
+    try{
+      if(typeof crypto==="undefined"||typeof crypto.randomUUID!=="function")return true;
+      if(typeof Object.hasOwn!=="function")return true;
+      if(typeof[].at!=="function")return true;
+      if(typeof[].findLast!=="function")return true;
+      return false;
+    }catch(e){return true}
+  })();
+  if(needsPolyfill){
+    document.write('<script src="/assets/polyfills.js"><\/script>');
+  }
+})();
+</script>
+  <script>
+    window.appId = "";
+    window.userId = "";
+    window.tenantId = "";
+    window.userName = "";
+    window.csrfToken = "";
+    window.ENVIRONMENT = "production";
+    window.__BASENAME__ = "/";
+    const appInfo = {
+      name: "招新面试叫号系统",
+      avatar: "",
+      description: "",
+    };
+    if (appInfo.name) {
+      window._appInfo = appInfo;
+    }
+  </script>
+
+  <script>(function(g){
+  if(!window[g]){var q=[];window[g]=function(){q.push([].slice.call(arguments));};window[g].q=q;}
+  window.__slardarErrBuf=window.__slardarErrBuf||[];
+  var ref=document.referrer||'';
+  function _cap(err){
+    if(window[g]&&!window[g].q){
+      window[g]('captureException',err instanceof Error?err:new Error(String(err)),{source:'runtime-error',referrer:ref});
+    }else{
+      (window.__slardarErrBuf=window.__slardarErrBuf||[]).push(err);
+    }
+  }
+  window.addEventListener('error',function(e){
+    if(e.error==null&&e.target instanceof Element){
+      var t=e.target,url=t.src||t.href||'';
+      if(url)window[g]('captureException',new Error('Resource load failed: '+url),{team:'miaoda-sdk',source:'resource-error',resourceType:t.tagName.toLowerCase(),resourceUrl:url,referrer:ref});
+      return;
+    }
+    if(e.error!=null){
+      var err=e.error;
+      if(e.filename&&typeof err.stack==='string'&&err.stack.indexOf(e.filename)<0){
+        try{err.stack+='\n    at '+e.filename+':'+(e.lineno||0)+':'+(e.colno||0);}catch(ex){}
+      }
+      _cap(err);
+    }else{
+      var msg=e.message||'Script error';
+      var err=new Error(msg);
+      if(e.filename)err.stack=msg+'\n    at '+e.filename+':'+(e.lineno||0)+':'+(e.colno||0);
+      _cap(err);
+    }
+  },true);
+  window.addEventListener('unhandledrejection',function(e){
+    if(e.reason!=null)_cap(e.reason instanceof Error?e.reason:new Error(String(e.reason)));
+  });
+})('KSlardarWeb');</script>
+  <script>
+    const slardarScript = document.createElement('script');
+    slardarScript.src = 'https://lf3-short.ibytedapm.com/slardar/fe/sdk-web/browser.cn.js?bid=apaas_miaoda&globalName=KSlardarWeb';
+    slardarScript.crossOrigin = 'anonymous';
+    slardarScript.onload = function() {
+      if (window.KSlardarWeb) {
+        window.KSlardarWeb('context.merge', {
+          tenantId: window.tenantId ?? '',
+          appId: window.appId ?? '',
+          stack_version: "2.3.0",
+          app_type: null,
+          arch_type: null,
+        });
+        window.KSlardarWeb('init', {
+          bid: 'apaas_miaoda',
+          env: window.ENVIRONMENT || 'online',
+          userId: window.userId ?? '',
+        });
+        window.KSlardarWeb('start');
+        // Flush errors captured before the SDK finished loading
+        var buf = window.__slardarErrBuf || [];
+        window.__slardarErrBuf = [];
+        buf.forEach(function(err) {
+          window.KSlardarWeb('captureException', err instanceof Error ? err : new Error(String(err)), { source: 'pre-sdk-error', referrer: document.referrer || '' });
+        });
+      }
+    };
+    slardarScript.onerror = function() {
+      console.warn('Failed to load Slardar script');
+    };
+    document.head.appendChild(slardarScript);
+  </script>
+  <script src="https://sf3-scmcdn-cn.feishucdn.com/obj/unpkg/byted/performance/0.2.3/dist/performance.iife.js" data-app-name="builderV3" crossorigin="anonymous" defer></script>
+  <script>
+  (function (win, export_obj) {
+    win['LogAnalyticsObject'] = export_obj;
+    if (!win[export_obj]) {
+      function _collect() { _collect.q.push(arguments); }
+      _collect.q = _collect.q || [];
+      win[export_obj] = _collect;
+    }
+    win[export_obj].l = +new Date();
+  })(window, 'collectEvent');
+
+  const teaScript = document.createElement('script');
+  teaScript.src = 'https://lf3-cdn-tos.bytescm.com/obj/static/log-sdk/collect/5.1/collect.js';
+  teaScript.crossOrigin = 'anonymous';
+  teaScript.async = true;
+  teaScript.onerror = function() {
+    console.warn('Failed to load Tea script');
+  };
+  document.head.appendChild(teaScript);
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4f46e5">
+  
+  <link rel="preload" href="/logo.webp" as="image">
+  <title>党支部义务电脑维修队</title>
+  <script>window.__platform__ = {};</script>
+  <style>#app-loading{z-index:9999;background:#f8fafc;flex-direction:column;justify-content:center;align-items:center;gap:16px;display:flex;position:fixed;top:0;bottom:0;left:0;right:0}#app-loading .logo{color:#fff;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:16px;justify-content:center;align-items:center;width:64px;height:64px;font-size:24px;font-weight:700;display:flex;box-shadow:0 10px 30px #6366f14d}#app-loading .text{color:#64748b;font-size:16px;font-weight:500}#app-loading .spinner{border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;width:28px;height:28px;animation:.8s linear infinite app-spin}@keyframes app-spin{to{transform:rotate(360deg)}}</style>
+  <script type="module" crossorigin src="/assets/index-CS85hWk7.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="/assets/radix-CaAb_cZw.js">
+  <link rel="modulepreload" crossorigin href="/assets/preload-helper-BLdHbfdN.js">
+  <link rel="modulepreload" crossorigin href="/assets/utils-D4ra_7G3.js">
+  <link rel="modulepreload" crossorigin href="/assets/dist-CbpkjKJK.js">
+  <link rel="modulepreload" crossorigin href="/assets/logger-CvH_Y8Go.js">
+  <link rel="modulepreload" crossorigin href="/assets/button-nGeixadk.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-BldpTZb0.css">
+
+    <meta property="og:title" content="党支部义务电脑维修队">
+  
+    <meta property="og:description" content="">
+  
+    <meta property="og:image" content="">
+  
+    <meta name="description" content="">
+      <link rel="icon" href="/favicon.svg">
+  </head>
+<body>
+  <div id="root">
+    <!-- 内联首屏loading，无需等待JS加载，扫码立即显示 -->
+    <div id="app-loading">
+      <div class="logo">修</div>
+      <div class="spinner"></div>
+      <div class="text">党支部义务电脑维修队</div>
+    </div>
+  </div>
+</body>
+</html>
