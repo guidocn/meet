@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ArrowRight,
   ArrowRightLeft,
   Check,
   CheckCircle2,
@@ -225,6 +226,23 @@ const CheckInPage = () => {
     } catch (error) {
       logger.error('审批失败', error);
       toast.error('审批失败，请重试');
+    }
+  };
+
+  // 推进到二面（一面完成 → 二面待面试）
+  const handleMoveToSecond = async (candidateId: string) => {
+    if (!canOperateFlow) {
+      toast.error('无权限操作，仅管理员和流动人员可操作');
+      return;
+    }
+    try {
+      await candidates.moveToSecondRound(candidateId, session?.name ?? '');
+      toast.success('已推进到二面');
+      void loadList(true);
+      void loadGroupCounts();
+    } catch (error) {
+      logger.error('推进二面失败', error);
+      toast.error('推进二面失败，请重试');
     }
   };
 
@@ -972,6 +990,29 @@ const CheckInPage = () => {
               </span>
             ) : (
               <span className="text-slate-400">该组队列已空</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // 一面完成 → 推进到二面
+    if (candidate.status === 'first_completed') {
+      return (
+        <div className="flex flex-col gap-2 items-start">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500">一面完成，等待推进二面</span>
+            {renderInterviewStatusBadge(candidate.status)}
+            {canOperateFlow && (
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 gap-1"
+                onClick={() => handleMoveToSecond(candidate.id)}
+                aria-label={`推进二面 ${candidate.name}`}
+              >
+                <ArrowRight className="h-3 w-3" />
+                推进二面
+              </Button>
             )}
           </div>
         </div>

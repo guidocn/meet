@@ -233,6 +233,17 @@ export async function approveCandidate(
   });
 }
 
+// 推进到二面（一面完成 → 二面待面试）
+export async function moveToSecondRound(
+  candidateId: string,
+  operatorName: string,
+): Promise<Candidate> {
+  return request<Candidate>(`/api/candidates/second/move-to`, {
+    method: 'POST',
+    body: JSON.stringify({ candidateId, operatorName }),
+  });
+}
+
 export async function getBigScreenData(): Promise<BigScreenData> {
   return request<BigScreenData>('/api/candidates/display/big-screen');
 }

@@ -24,11 +24,11 @@ const INTERVIEWERS = [
   { name: '刘代贵', groupName: 'D' },
 ];
 
-// 二面面试官分组
-// A组：正式（默认开启）
-const SECOND_ROUND_GROUP_A = ['刘代贵'];
-// B组：备用（需要guido手动开启）
-const SECOND_ROUND_GROUP_B = ['备用二面官1', '备用二面官2'];
+// 二面面试官分组（共5人，名单待定，先留占位）
+// A组：正式二面官（默认开启）
+const SECOND_ROUND_GROUP_A = ['刘代贵', '二面A2', '二面A3'];
+// B组：备用二面官（需要guido手动开启）
+const SECOND_ROUND_GROUP_B = ['二面B1', '二面B2'];
 
 // 备用二面B组开关（存在内存里，重启后恢复默认关闭）
 let _backupBEnabled = false;
