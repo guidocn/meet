@@ -895,7 +895,11 @@ export async function handleInterviewerLogin(db, body) {
     return { success: true, name, groupName: 'A', role: 'floating' };
   }
   
-  // 二面面试官识别
+  // 先判断一面面试官（优先级更高）
+  const found = INTERVIEWERS.find((i) => i.name === name);
+  if (found) return { success: true, name: found.name, groupName: found.groupName, role: 'interviewer' };
+  
+  // 再判断二面面试官
   if (SECOND_ROUND_GROUP_E.includes(name)) {
     return { success: true, name, groupName: 'E', role: 'second_interviewer', isSecondRound: true };
   }
@@ -903,9 +907,7 @@ export async function handleInterviewerLogin(db, body) {
     return { success: true, name, groupName: 'F', role: 'second_interviewer', isSecondRound: true };
   }
   
-  const found = INTERVIEWERS.find((i) => i.name === name);
-  if (!found) return { success: false, message: '姓名不在面试官名单中' };
-  return { success: true, name: found.name, groupName: found.groupName, role: 'interviewer' };
+  return { success: false, message: '姓名不在面试官名单中' };
 }
 
 export async function handleGetGroupQueue(db, groupName, interviewerName) {

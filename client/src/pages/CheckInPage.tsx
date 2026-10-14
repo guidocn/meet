@@ -70,7 +70,8 @@ import {
 
 const PAGE_SIZE = 20;
 const GROUP_OPTIONS: GroupName[] = ['A', 'B', 'C', 'D'];
-const REFRESH_INTERVAL = 10000; // 10秒刷新一次，响应更快
+const SECOND_GROUP_OPTIONS: string[] = ['E', 'F'];
+const REFRESH_INTERVAL = 15000; // 15秒刷新一次，避免页面卡顿
 
 // 分组按钮颜色映射，方便快速区分不同组
 const GROUP_COLORS: Record<GroupName, { bg: string; hover: string; border: string; text: string }> = {
@@ -1017,24 +1018,13 @@ const CheckInPage = () => {
       );
     }
 
-    // 一面完成 → 二面签到
+    // 一面完成 → 等待学生自己二面签到
     if (candidate.status === 'first_completed' || candidate.status === 'completed') {
       return (
         <div className="flex flex-col gap-2 items-start">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">等待二面签到</span>
+            <span className="text-xs text-slate-500">等待学生二面签到</span>
             {renderInterviewStatusBadge(candidate.status)}
-            {canOperateFlow && (
-              <Button
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 gap-1"
-                onClick={() => handleMoveToSecond(candidate.id)}
-                aria-label={`二面签到 ${candidate.name}`}
-              >
-                <ArrowRight className="h-3 w-3" />
-                二面签到
-              </Button>
-            )}
           </div>
         </div>
       );
@@ -1278,6 +1268,20 @@ const CheckInPage = () => {
                 {recommended && (
                   <span className="text-xs font-normal text-emerald-600">· 推荐</span>
                 )}
+              </span>
+            );
+          })}
+          {/* 二面E/F组 */}
+          {SECOND_GROUP_OPTIONS.map((g: string) => {
+            const count = groupCounts?.[g] || 0;
+            return (
+              <span
+                key={g}
+                className="inline-flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200"
+                title={`二面${g}组当前${count}人待面试`}
+              >
+                <span>{g}组</span>
+                <span className="text-purple-600">{count}</span>
               </span>
             );
           })}
