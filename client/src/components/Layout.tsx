@@ -44,10 +44,10 @@ const Layout = () => {
     navigate('/login', { replace: true });
   };
 
-  // 管理员显示三个控制台，其他角色显示两个（签到分流台+面试官工作台）
+  // 管理员（guido）显示三个控制台，其他角色显示两个（签到分流台+面试官工作台）
   const navItems = !isAdmin 
     ? publicNavItems 
-    : session.role === 'admin' 
+    : session.name === 'guido' 
       ? adminNavItems 
       : normalNavItems;
 
