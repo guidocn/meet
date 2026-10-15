@@ -1,0 +1,29 @@
+[
+  {
+    "path": "/"
+  },
+  {
+    "path": "/ticket"
+  },
+  {
+    "path": "/checkin"
+  },
+  {
+    "path": "/interview"
+  },
+  {
+    "path": "/second-round"
+  },
+  {
+    "path": "/results"
+  },
+  {
+    "path": "/console"
+  },
+  {
+    "path": "/display"
+  },
+  {
+    "path": "/login"
+  }
+]

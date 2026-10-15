@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统管理 - 招新面试叫号系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        .mode-toggle {
+            display: flex;
+            gap: 15px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            background: #f9fafb;
+        }
+        .mode-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        .mode-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        .mode-btn .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .mode-btn .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .mode-btn .desc {
+            font-size: 12px;
+            color: #666;
+        }
+        .status-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #0369a1;
+        }
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .quick-link {
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+        .quick-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .quick-link .link-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        .quick-link .link-text {
+            font-size: 13px;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ 系统管理面板</h1>
+            <p>招新面试叫号系统 · 管理员控制台</p>
+        </div>
+
+        <div class="card">
+            <h2>面试模式切换</h2>
+            <div class="mode-toggle">
+                <div class="mode-btn" id="firstMode" onclick="switchMode('first')">
+                    <div class="icon">🎯</div>
+                    <div class="title">一面模式</div>
+                    <div class="desc">A/B/C/D组 · 一面打分</div>
+                </div>
+                <div class="mode-btn" id="secondMode" onclick="switchMode('second')">
+                    <div class="icon">🔄</div>
+                    <div class="title">二面模式</div>
+                    <div class="desc">E/F组 · 二面打分</div>
+                </div>
+            </div>
+            <div class="status-info">
+                当前模式：<strong id="currentModeText">加载中...</strong>
+                <div style="margin-top:8px; font-size:12px; opacity:0.8;">
+                    切换后候场大屏、签到分流台、签到页自动生效
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>快速导航</h2>
+            <div class="quick-links">
+                <a href="/" class="quick-link">
+                    <div class="link-icon">📝</div>
+                    <div class="link-text">信息签到</div>
+                </a>
+                <a href="/checkin" class="quick-link">
+                    <div class="link-icon">🏠</div>
+                    <div class="link-text">签到分流台</div>
+                </a>
+                <a href="/display" class="quick-link">
+                    <div class="link-icon">📺</div>
+                    <div class="link-text">候场大屏</div>
+                </a>
+                <a href="/results" class="quick-link">
+                    <div class="link-icon">📊</div>
+                    <div class="link-text">结果管理</div>
+                </a>
+                <a href="/interview" class="quick-link">
+                    <div class="link-icon">👔</div>
+                    <div class="link-text">面试官工作台</div>
+                </a>
+                <a href="/login" class="quick-link">
+                    <div class="link-icon">🔐</div>
+                    <div class="link-text">登录页</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        async function loadSettings() {
+            try {
+                const resp = await fetch('/api/settings');
+                const data = await resp.json();
+                if (data.success) {
+                    const mode = data.settings.mode || 'first';
+                    updateModeUI(mode);
+                }
+            } catch (e) {
+                showToast('加载设置失败', 'error');
+            }
+        }
+
+        function updateModeUI(mode) {
+            const firstBtn = document.getElementById('firstMode');
+            const secondBtn = document.getElementById('secondMode');
+            const text = document.getElementById('currentModeText');
+            
+            if (mode === 'second') {
+                firstBtn.classList.remove('active');
+                secondBtn.classList.add('active');
+                text.textContent = '二面模式（E/F组）';
+            } else {
+                firstBtn.classList.add('active');
+                secondBtn.classList.remove('active');
+                text.textContent = '一面模式（A/B/C/D组）';
+            }
+        }
+
+        async function switchMode(mode) {
+            try {
+                const resp = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: 'mode', value: mode })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    updateModeUI(mode);
+                    showToast(mode === 'second' ? '已切换到二面模式' : '已切换到一面模式', 'success');
+                } else {
+                    showToast('切换失败: ' + data.message, 'error');
+                }
+            } catch (e) {
+                showToast('切换失败: ' + e.message, 'error');
+            }
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show ' + (type || 'success');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 页面加载时获取当前模式
+        loadSettings();
+    </script>
+</body>
+</html>
